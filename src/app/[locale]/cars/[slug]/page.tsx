@@ -11,6 +11,7 @@ import { CarCard } from "@/components/CarCard";
 import { Gallery } from "@/components/Gallery";
 import { LeadForm } from "@/components/LeadForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { reveal, stagger } from "@/lib/reveal";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -56,7 +57,7 @@ export default async function CarPage({ params }: Props) {
       </nav>
 
       <section className="container-page grid gap-10 pt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-10" {...reveal()}>
           <Gallery
             images={car.images}
             colors={car.colors}
@@ -66,7 +67,7 @@ export default async function CarPage({ params }: Props) {
           <Specs car={car} t={t} locale={locale} />
         </div>
 
-        <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
+        <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start" {...reveal(150)}>
           <div className="rounded-[24px] border border-line bg-ink-2 p-6 sm:p-7">
             <StatusBadge status={car.status} t={t} />
             <h1 className="mt-4 font-serif text-[40px] font-medium leading-[1.05]">{name}</h1>
@@ -104,13 +105,15 @@ export default async function CarPage({ params }: Props) {
 
       {similar.length > 0 && (
         <section className="container-page mt-20 flex flex-col gap-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap items-end justify-between gap-4" {...reveal()}>
             <h2 className="font-serif text-4xl font-medium">{t.car.similar}</h2>
             <Link href={`/${locale}/cars`} className="text-sm text-gold hover:text-ivory">{t.home.browseAll}</Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {similar.map((c) => (
-              <CarCard key={c.id} car={c} locale={locale} t={t} />
+            {similar.map((c, i) => (
+              <div key={c.id} className="flex" {...reveal(stagger(i))}>
+                <CarCard car={c} locale={locale} t={t} />
+              </div>
             ))}
           </div>
         </section>

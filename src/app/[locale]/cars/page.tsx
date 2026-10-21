@@ -6,6 +6,7 @@ import { filterOptions, getBrands, listVehicles, parseFilters } from "@/lib/vehi
 import { interpolate } from "@/lib/format";
 import { CarCard } from "@/components/CarCard";
 import { PageHeader } from "@/components/PageHeader";
+import { reveal, stagger } from "@/lib/reveal";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -41,6 +42,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         <form
           method="get"
           action={`/${locale}/cars`}
+          {...reveal(240)}
           className="grid gap-4 rounded-[24px] border border-line bg-ink-2 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]"
         >
           <Select name="brand" label={t.catalog.brand} value={filters.brand} any={t.catalog.any}
@@ -65,8 +67,10 @@ export default async function CatalogPage({ params, searchParams }: Props) {
 
         {cars.length ? (
           <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {cars.map((car) => (
-              <CarCard key={car.id} car={car} locale={locale} t={t} />
+            {cars.map((car, i) => (
+              <div key={car.id} className="flex" {...reveal(stagger(i))}>
+                <CarCard car={car} locale={locale} t={t} />
+              </div>
             ))}
           </div>
         ) : (

@@ -82,6 +82,7 @@ export const en = {
       warranty: "Warranty",
     },
   },
+  ticker: ["Warranty on every car", "Financing in AMD", "Customs & registration handled", "Test drives in Yerevan"],
   units: { hp: "hp", km: "km", mm: "mm", sec: "s", kmh: "km/h", kwh: "kWh" },
   status: { IN_STOCK: "In stock", IN_TRANSIT: "In transit", PRE_ORDER: "Pre-order" },
   fuel: { ELECTRIC: "Electric", EREV: "Range-extended hybrid", PHEV: "Plug-in hybrid", HYBRID: "Hybrid", PETROL: "Petrol" },

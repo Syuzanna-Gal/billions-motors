@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale, locales, type Dictionary } from "@/i18n";
 import { PageHeader } from "@/components/PageHeader";
+import { reveal } from "@/lib/reveal";
 
 // Simple content pages: /financing, /import-process, /warranty, /about
 type PageKey = keyof Dictionary["pages"];
@@ -38,7 +39,7 @@ export default async function ContentPage({ params }: Props) {
         <div className="gold-rule mb-10 opacity-60" />
         <ol className="flex max-w-3xl flex-col gap-8">
           {content.body.map((para, i) => (
-            <li key={i} className="flex gap-6">
+            <li key={i} className="flex gap-6" {...reveal(i * 90)}>
               {numbered && (
                 <span className="text-gold w-12 flex-none font-serif text-4xl leading-none">{String(i + 1).padStart(2, "0")}</span>
               )}

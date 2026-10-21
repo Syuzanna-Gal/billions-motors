@@ -11,6 +11,7 @@ import { getDictionary, isLocale, languageAlternates, localeTags, locales } from
 import { site } from "@/lib/site";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { RevealObserver } from "@/components/RevealObserver";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -52,6 +53,11 @@ export default async function LocaleLayout({
         <Header locale={locale} t={t} />
         <main id="main">{children}</main>
         <Footer locale={locale} t={t} />
+        <RevealObserver />
+        {/* Without JavaScript, show everything instead of waiting for the scroll reveal. */}
+        <noscript>
+          <style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
       </body>
     </html>
   );
