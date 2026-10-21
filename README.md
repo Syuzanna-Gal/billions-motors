@@ -8,7 +8,9 @@ Armenian (`/hy`, default), English (`/en`) and Russian (`/ru`).
 - **Next.js 15** (App Router, server rendering) + **TypeScript**
 - **Tailwind CSS v4** with the *Noir Champagne* design tokens (`src/app/globals.css`)
 - Fonts self-hosted via Fontsource: Cormorant Garamond, Inter, Noto Sans/Serif Armenian
-- Planned: **PostgreSQL** for cars, photos and leads; admin panel
+- **PostgreSQL** for cars, translations, colours, photos, leads and admin users
+  (embedded PGlite locally — no install; a real PostgreSQL server via `DATABASE_URL` in production)
+- Planned: admin panel
 
 ## Run locally
 
@@ -20,6 +22,13 @@ npm run dev          # http://localhost:3000 → redirects to /hy
 
 `npm run build && npm start` runs the production build.
 
+## Database
+
+Locally nothing to install: on first start the app creates an embedded PostgreSQL in
+`.data/pglite`, applies the migrations and inserts the demo cars. Delete `.data/` to start fresh.
+
+To inspect it, or in production, use a regular PostgreSQL and set `DATABASE_URL`.
+
 ## Project layout
 
 ```
@@ -27,13 +36,16 @@ src/
   app/
     [locale]/            pages: home, cars, cars/[slug], loan-calculator, contact,
                          [page] (financing, import-process, warranty, about)
-    api/leads/route.ts   form submissions (validated; DB insert is next)
+    api/leads/route.ts   form submissions → leads table
     robots.ts, sitemap.ts
   components/            Header, Footer, CarCard, Gallery, LeadForm, LoanCalculator…
   i18n/                  hy.ts / en.ts / ru.ts dictionaries — all site text lives here
   lib/
-    vehicles.ts          data access (mock data now → PostgreSQL next)
-    mock-vehicles.ts     development seed cars
+    db/index.ts          connection (PGlite or pg), runs migrations, seeds demo cars
+    db/migrations.ts     SQL schema — add new migrations at the end, never edit shipped ones
+    db/seed.ts           demo cars inserted into an empty database (dev / test site)
+    vehicles.ts          car queries used by the pages
+    leads.ts             saves form requests
     loan.ts              annuity loan formula
 ```
 

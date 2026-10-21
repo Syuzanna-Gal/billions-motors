@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { createLead } from "@/lib/leads";
 
 /*
- * Receives offer / financing / contact requests from the site's forms.
- * For now it validates and logs the lead. Next step: insert into the `leads`
- * table and notify the team on Telegram.
+ * Receives offer / financing / contact requests from the site's forms,
+ * validates them and saves them to the `leads` table.
+ * Next step: notify the team on Telegram.
  */
 
 const TYPES = ["OFFER", "FINANCING", "CONTACT"] as const;
@@ -27,9 +28,9 @@ export async function POST(request: Request) {
     channel: CHANNELS.find((c) => c === body.channel) ?? "PHONE",
     message: str(body.message, 2000) || null,
     vehicleSlug: str(body.vehicleSlug, 200) || null,
-    locale: body.locale === "en" || body.locale === "ru" ? body.locale : "hy",
+    locale: (body.locale === "en" || body.locale === "ru" ? body.locale : "hy") as "hy" | "en" | "ru",
     consent: body.consent === "on" || body.consent === true,
-    createdAt: new Date().toISOString(),
+    extra: isPlainObject(body.extra) ? body.extra : null,
   };
 
   const errors: string[] = [];
@@ -39,8 +40,15 @@ export async function POST(request: Request) {
   if (!lead.consent) errors.push("consent");
   if (errors.length) return NextResponse.json({ error: "Validation failed", fields: errors }, { status: 422 });
 
-  // TODO(db): INSERT INTO leads … ; TODO(notify): send to the team's Telegram chat.
-  console.info("[lead]", JSON.stringify(lead));
+  try {
+    const id = await createLead(lead);
+    return NextResponse.json({ ok: true, id }, { status: 201 });
+  } catch (err) {
+    console.error("[lead] could not save", err);
+    return NextResponse.json({ error: "Could not save" }, { status: 500 });
+  }
+}
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && JSON.stringify(v).length < 2000;
 }

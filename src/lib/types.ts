@@ -11,6 +11,8 @@ export interface VehicleImage {
 
 /** One paint option. Photos are per colour; an empty list falls back to the car's main photos. */
 export interface VehicleColor {
+  id: number;
+  /** In the requested language. */
   name: string;
   hex: string;
   images: VehicleImage[];
@@ -28,7 +30,9 @@ export interface Vehicle {
   fuelType: FuelType;
   bodyType: BodyType;
   drive: DriveType;
-  transmission: string;
+  /** In the requested language. */
+  transmission: string | null;
+  description: string | null;
   horsepower: number;
   evRangeKm: number | null;
   batteryKwh: number | null;

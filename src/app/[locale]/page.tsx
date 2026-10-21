@@ -7,13 +7,15 @@ import { whatsappHref } from "@/lib/site";
 import { CarCard } from "@/components/CarCard";
 import { CarPhoto } from "@/components/CarPhoto";
 
+// Car data comes from the database, so render on each request.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
 
-  const [hero] = await getFeatured(1);
-  const collection = (await listVehicles({ sort: "newest" })).slice(0, 6);
+  const [[hero], collection] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, 6)]);
 
   return (
     <>

@@ -28,7 +28,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
   const filters = parseFilters(await searchParams);
-  const [cars, brands] = await Promise.all([listVehicles(filters), getBrands()]);
+  const [cars, brands] = await Promise.all([listVehicles(locale, filters), getBrands()]);
 
   const sortLabels = { newest: t.catalog.sortNewest, price_asc: t.catalog.sortPriceAsc, price_desc: t.catalog.sortPriceDesc };
 

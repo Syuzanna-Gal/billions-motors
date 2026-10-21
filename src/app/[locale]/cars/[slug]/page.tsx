@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale, languageAlternates, locales, type Dictionary, type Locale } from "@/i18n";
-import { getAllSlugs, getSimilar, getVehicle } from "@/lib/vehicles";
+import { getDictionary, isLocale, languageAlternates, type Dictionary, type Locale } from "@/i18n";
+import { getSimilar, getVehicle } from "@/lib/vehicles";
 import { formatAmd, formatNumber, vehicleName } from "@/lib/format";
 import { calculateLoan } from "@/lib/loan";
 import { telHref, whatsappHref } from "@/lib/site";
@@ -14,15 +14,13 @@ import { StatusBadge } from "@/components/StatusBadge";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-export async function generateStaticParams() {
-  const slugs = await getAllSlugs();
-  return locales.flatMap((locale) => slugs.map((slug) => ({ locale, slug })));
-}
+// Car data comes from the database, so render on each request.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!isLocale(locale)) return {};
-  const car = await getVehicle(slug);
+  const car = await getVehicle(slug, locale);
   if (!car) return {};
   const t = getDictionary(locale);
   const name = vehicleName(car);
@@ -40,11 +38,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CarPage({ params }: Props) {
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
-  const car = await getVehicle(slug);
+  const car = await getVehicle(slug, locale);
   if (!car) notFound();
   const t = getDictionary(locale);
   const name = vehicleName(car);
-  const similar = await getSimilar(car);
+  const similar = await getSimilar(car, locale);
 
   // Same defaults as the loan calculator page: 30% down, 48 months.
   const monthly = car.priceAmd ? calculateLoan(car.priceAmd, car.priceAmd * 0.3, 14, 48).monthly : null;

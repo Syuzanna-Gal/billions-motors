@@ -3,6 +3,8 @@ import { locales } from "@/i18n/config";
 import { site } from "@/lib/site";
 import { getAllSlugs } from "@/lib/vehicles";
 
+export const dynamic = "force-dynamic";
+
 const staticPaths = ["", "/cars", "/loan-calculator", "/financing", "/import-process", "/warranty", "/about", "/contact"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
