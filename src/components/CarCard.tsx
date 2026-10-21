@@ -30,12 +30,12 @@ export function CarCard({ car, locale, t }: { car: Vehicle; locale: Locale; t: D
           <div>
             <dt>{t.car.range}</dt>
             <dd className="mt-1 text-[15px] normal-case tracking-normal text-ivory">
-              {car.evRangeKm ? `${formatNumber(car.evRangeKm, locale)} km` : "—"}
+              {car.evRangeKm ? `${formatNumber(car.evRangeKm, locale)} ${t.units.km}` : "—"}
             </dd>
           </div>
           <div>
             <dt>{t.car.power}</dt>
-            <dd className="mt-1 text-[15px] normal-case tracking-normal text-ivory">{car.horsepower} hp</dd>
+            <dd className="mt-1 text-[15px] normal-case tracking-normal text-ivory">{car.horsepower} {t.units.hp}</dd>
           </div>
           <div>
             <dt>{t.car.warranty}</dt>

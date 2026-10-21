@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     channel: CHANNELS.find((c) => c === body.channel) ?? "PHONE",
     message: str(body.message, 2000) || null,
     vehicleSlug: str(body.vehicleSlug, 200) || null,
-    locale: body.locale === "en" ? "en" : "hy",
+    locale: body.locale === "en" || body.locale === "ru" ? body.locale : "hy",
     consent: body.consent === "on" || body.consent === true,
     createdAt: new Date().toISOString(),
   };

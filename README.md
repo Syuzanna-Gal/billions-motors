@@ -1,7 +1,7 @@
 # Billions Motors
 
 Website for Billions — premium cars imported from China, sold in Yerevan.
-Armenian (`/hy`, default) and English (`/en`).
+Armenian (`/hy`, default), English (`/en`) and Russian (`/ru`).
 
 ## Stack
 
@@ -30,7 +30,7 @@ src/
     api/leads/route.ts   form submissions (validated; DB insert is next)
     robots.ts, sitemap.ts
   components/            Header, Footer, CarCard, Gallery, LeadForm, LoanCalculator…
-  i18n/                  hy.ts / en.ts dictionaries — all site text lives here
+  i18n/                  hy.ts / en.ts / ru.ts dictionaries — all site text lives here
   lib/
     vehicles.ts          data access (mock data now → PostgreSQL next)
     mock-vehicles.ts     development seed cars

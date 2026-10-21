@@ -1,4 +1,4 @@
-import type { Locale } from "@/i18n/config";
+import { amdSuffix, localeTags, type Locale } from "@/i18n/config";
 import type { Vehicle } from "./types";
 
 export function vehicleName(v: Pick<Vehicle, "brand" | "model" | "trim">): string {
@@ -6,11 +6,11 @@ export function vehicleName(v: Pick<Vehicle, "brand" | "model" | "trim">): strin
 }
 
 export function formatNumber(n: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === "hy" ? "hy-AM" : "en-US").format(Math.round(n));
+  return new Intl.NumberFormat(localeTags[locale].intl).format(Math.round(n));
 }
 
 export function formatAmd(n: number, locale: Locale): string {
-  return `${formatNumber(n, locale)} ${locale === "hy" ? "դր." : "AMD"}`;
+  return `${formatNumber(n, locale)} ${amdSuffix[locale]}`;
 }
 
 export function interpolate(template: string, values: Record<string, string | number>): string {

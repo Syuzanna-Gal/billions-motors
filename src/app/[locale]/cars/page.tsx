@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale } from "@/i18n";
+import { getDictionary, isLocale, languageAlternates } from "@/i18n";
 import { filterOptions, getBrands, listVehicles, parseFilters } from "@/lib/vehicles";
 import { interpolate } from "@/lib/format";
 import { CarCard } from "@/components/CarCard";
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t.nav.cars,
     description: t.catalog.lead,
-    alternates: { canonical: `/${locale}/cars`, languages: { hy: "/hy/cars", en: "/en/cars" } },
+    alternates: { canonical: `/${locale}/cars`, languages: languageAlternates("/cars") },
   };
 }
 

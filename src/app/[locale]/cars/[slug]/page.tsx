@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale, type Dictionary, type Locale } from "@/i18n";
+import { getDictionary, isLocale, languageAlternates, locales, type Dictionary, type Locale } from "@/i18n";
 import { getAllSlugs, getSimilar, getVehicle } from "@/lib/vehicles";
 import { formatAmd, formatNumber, vehicleName } from "@/lib/format";
 import { calculateLoan } from "@/lib/loan";
@@ -16,7 +16,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateStaticParams() {
   const slugs = await getAllSlugs();
-  return ["hy", "en"].flatMap((locale) => slugs.map((slug) => ({ locale, slug })));
+  return locales.flatMap((locale) => slugs.map((slug) => ({ locale, slug })));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,10 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = vehicleName(car);
   return {
     title: `${name} ${car.year}`,
-    description: `${name} ${car.year} · ${t.fuel[car.fuelType]} · ${car.horsepower} hp · ${t.status[car.status]}`,
+    description: `${name} ${car.year} · ${t.fuel[car.fuelType]} · ${car.horsepower} ${t.units.hp} · ${t.status[car.status]}`,
     alternates: {
       canonical: `/${locale}/cars/${slug}`,
-      languages: { hy: `/hy/cars/${slug}`, en: `/en/cars/${slug}` },
+      languages: languageAlternates(`/cars/${slug}`),
     },
     openGraph: car.images[0] ? { images: [car.images[0].url] } : undefined,
   };
@@ -123,23 +123,24 @@ export default async function CarPage({ params }: Props) {
 
 function Specs({ car, t, locale }: { car: Vehicle; t: Dictionary; locale: Locale }) {
   const s = t.car.spec;
-  const mm = (v: number | null) => (v ? `${formatNumber(v, locale)} mm` : null);
+  const u = t.units;
+  const mm = (v: number | null) => (v ? `${formatNumber(v, locale)} ${u.mm}` : null);
   const rows: [string, string | null][] = [
     [s.year, String(car.year)],
     [s.bodyType, t.body[car.bodyType]],
     [s.fuelType, t.fuel[car.fuelType]],
-    [s.horsepower, `${car.horsepower} hp`],
+    [s.horsepower, `${car.horsepower} ${u.hp}`],
     [s.transmission, car.transmission],
     [s.drive, t.drive[car.drive]],
-    [s.accel, car.accel0100 ? `${car.accel0100} s` : null],
-    [s.topSpeed, car.topSpeedKmh ? `${car.topSpeedKmh} km/h` : null],
-    [s.battery, car.batteryKwh ? `${car.batteryKwh} kWh` : null],
-    [s.evRange, car.evRangeKm ? `${formatNumber(car.evRangeKm, locale)} km` : null],
+    [s.accel, car.accel0100 ? `${car.accel0100} ${u.sec}` : null],
+    [s.topSpeed, car.topSpeedKmh ? `${car.topSpeedKmh} ${u.kmh}` : null],
+    [s.battery, car.batteryKwh ? `${car.batteryKwh} ${u.kwh}` : null],
+    [s.evRange, car.evRangeKm ? `${formatNumber(car.evRangeKm, locale)} ${u.km}` : null],
     [s.seats, String(car.seats)],
     [s.length, mm(car.lengthMm)],
     [s.width, mm(car.widthMm)],
     [s.height, mm(car.heightMm)],
-    [s.warranty, `${car.warrantyYears} ${t.car.years} / ${formatNumber(car.warrantyKm, locale)} km`],
+    [s.warranty, `${car.warrantyYears} ${t.car.years} / ${formatNumber(car.warrantyKm, locale)} ${u.km}`],
   ];
 
   return (

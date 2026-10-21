@@ -49,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <p className="mt-1.5 font-serif text-[32px] leading-tight">{vehicleName(hero)}</p>
               </div>
               <p className="text-sm text-mute">
-                {hero.year} · {t.fuel[hero.fuelType]} · {hero.horsepower} hp
+                {hero.year} · {t.fuel[hero.fuelType]} · {hero.horsepower} {t.units.hp}
               </p>
             </div>
           </Link>

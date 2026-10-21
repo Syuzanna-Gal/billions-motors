@@ -7,7 +7,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/noto-sans-armenian";
 import "@fontsource-variable/noto-serif-armenian";
 import "../globals.css";
-import { getDictionary, isLocale, locales } from "@/i18n";
+import { getDictionary, isLocale, languageAlternates, localeTags, locales } from "@/i18n";
 import { site } from "@/lib/site";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -26,8 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     metadataBase: new URL(site.url),
     title: { default: t.meta.title, template: "%s | Billions" },
     description: t.meta.description,
-    alternates: { canonical: `/${locale}`, languages: { hy: "/hy", en: "/en" } },
-    openGraph: { siteName: "Billions", type: "website", locale: locale === "hy" ? "hy_AM" : "en_US" },
+    alternates: { canonical: `/${locale}`, languages: languageAlternates("") },
+    openGraph: { siteName: "Billions", type: "website", locale: localeTags[locale].og },
     robots: site.noindex ? { index: false, follow: false } : { index: true, follow: true },
   };
 }

@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import type { Dictionary } from "@/i18n";
 import { calculateLoan } from "@/lib/loan";
+import { amdSuffix, localeTags, type Locale } from "@/i18n/config";
 
-type Props = { t: Dictionary["loan"]; locale: "hy" | "en"; initialPrice?: number };
+type Props = { t: Dictionary["loan"]; locale: Locale; initialPrice?: number };
 
 const TERMS = [12, 24, 36, 48, 60, 72, 84];
 
@@ -15,8 +16,8 @@ export function LoanCalculator({ t, locale, initialPrice }: Props) {
   const [term, setTerm] = useState(48);
 
   const result = useMemo(() => calculateLoan(price, Math.min(down, price), rate, term), [price, down, rate, term]);
-  const nf = new Intl.NumberFormat(locale === "hy" ? "hy-AM" : "en-US");
-  const amd = (n: number) => `${nf.format(Math.round(n))} ${locale === "hy" ? "դր." : "AMD"}`;
+  const nf = new Intl.NumberFormat(localeTags[locale].intl);
+  const amd = (n: number) => `${nf.format(Math.round(n))} ${amdSuffix[locale]}`;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">

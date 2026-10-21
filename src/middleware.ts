@@ -1,14 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale } from "@/i18n/config";
 
-// Every page lives under /hy or /en. Requests without a locale are redirected.
+// Every page lives under /hy, /en or /ru. Requests without a locale are redirected.
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const first = pathname.split("/")[1] ?? "";
   if (isLocale(first)) return NextResponse.next();
 
-  const preferred = request.headers.get("accept-language")?.toLowerCase() ?? "";
-  const locale = preferred.startsWith("en") && !preferred.includes("hy") ? "en" : defaultLocale;
+  // Pick the first of the browser's preferred languages that we support; Armenian otherwise.
+  const preferred = (request.headers.get("accept-language") ?? "")
+    .toLowerCase()
+    .split(",")
+    .map((part) => part.trim().slice(0, 2));
+  const locale = preferred.find(isLocale) ?? defaultLocale;
   const url = request.nextUrl.clone();
   url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
