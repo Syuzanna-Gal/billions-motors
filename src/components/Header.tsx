@@ -7,6 +7,7 @@ import { Logo } from "./Logo";
 export function navItems(locale: Locale, t: Dictionary) {
   return [
     { href: `/${locale}/cars`, label: t.nav.cars },
+    { href: `/${locale}/loan-calculator`, label: t.nav.loan },
     { href: `/${locale}/financing`, label: t.nav.financing },
     { href: `/${locale}/import-process`, label: t.nav.importProcess },
     { href: `/${locale}/warranty`, label: t.nav.warranty },
@@ -21,8 +22,8 @@ export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
       <div className="container-page flex items-center justify-between gap-5 py-4">
         <Logo locale={locale} />
 
-        <nav aria-label="Main" className="hidden lg:block">
-          <ul className="flex gap-7 text-sm tracking-wide">
+        <nav aria-label="Main" className="hidden xl:block">
+          <ul className="flex gap-6 whitespace-nowrap text-sm tracking-wide">
             {items.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="text-mute transition-colors hover:text-ivory">
@@ -40,7 +41,7 @@ export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
           </a>
 
           {/* Mobile menu: native <details>, works without JavaScript */}
-          <details className="group relative lg:hidden">
+          <details className="group relative xl:hidden">
             <summary
               className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-line [&::-webkit-details-marker]:hidden"
               aria-label={t.nav.menu}
@@ -62,11 +63,6 @@ export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <Link href={`/${locale}/loan-calculator`} className="block rounded-xl px-4 py-3 text-ivory hover:bg-ink-3">
-                    {t.nav.loan}
-                  </Link>
-                </li>
                 <li className="mt-2">
                   <a href={telHref()} className="btn-gold w-full">
                     {t.nav.callUs}
