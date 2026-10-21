@@ -1,0 +1,58 @@
+import type { Metadata, Viewport } from "next";
+import { notFound } from "next/navigation";
+import "@fontsource/cormorant-garamond/500.css";
+import "@fontsource/cormorant-garamond/500-italic.css";
+import "@fontsource/cormorant-garamond/600.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/noto-sans-armenian";
+import "@fontsource-variable/noto-serif-armenian";
+import "../globals.css";
+import { getDictionary, isLocale, locales } from "@/i18n";
+import { site } from "@/lib/site";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+export const viewport: Viewport = { themeColor: "#0b0b0c" };
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const t = getDictionary(locale);
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: t.meta.title, template: "%s | Billions" },
+    description: t.meta.description,
+    alternates: { canonical: `/${locale}`, languages: { hy: "/hy", en: "/en" } },
+    openGraph: { siteName: "Billions", type: "website", locale: locale === "hy" ? "hy_AM" : "en_US" },
+    robots: site.noindex ? { index: false, follow: false } : { index: true, follow: true },
+  };
+}
+
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const t = getDictionary(locale);
+
+  return (
+    <html lang={locale}>
+      <body className="min-h-dvh bg-ink text-ivory">
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 btn-gold">
+          Skip to content
+        </a>
+        <Header locale={locale} t={t} />
+        <main id="main">{children}</main>
+        <Footer locale={locale} t={t} />
+      </body>
+    </html>
+  );
+}

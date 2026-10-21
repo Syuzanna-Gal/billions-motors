@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* Noir Champagne design tokens */
+@theme {
+  --color-ink: #0b0b0c;
+  --color-ink-2: #141416;
+  --color-ink-3: #1d1b18;
+  --color-ivory: #f3eee4;
+  --color-mute: #b9b3a8;
+  --color-mute-2: #9a958c;
+  --color-gold: #e6cf9e;
+  --color-gold-mid: #c9a66b;
+  --color-gold-deep: #a8834a;
+  --color-line: rgb(230 207 158 / 0.16);
+
+  --font-serif: "Cormorant Garamond", "Noto Serif Armenian Variable", Georgia, serif;
+  --font-sans: "Inter Variable", "Noto Sans Armenian Variable", system-ui, sans-serif;
+
+  --radius-card: 22px;
+}
+
+@layer base {
+  html {
+    background: var(--color-ink);
+    color: var(--color-ivory);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Keep digits on the baseline with the letters (Cormorant defaults to old-style figures). */
+    font-variant-numeric: lining-nums;
+    font-feature-settings: "lnum" 1;
+  }
+  ::selection {
+    background: rgb(230 207 158 / 0.35);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@utility gold-gradient {
+  background-image: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
+}
+
+@utility text-gold {
+  background-image: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility gold-rule {
+  height: 1px;
+  background-image: linear-gradient(90deg, rgb(168 131 74 / 0) 0%, #e6cf9e 50%, rgb(168 131 74 / 0) 100%);
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 20px;
+  @media (width >= 48rem) {
+    padding-inline: 40px;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--color-ink);
+    background-image: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
+    background-size: 160% 100%;
+    background-position: 0% 0;
+    transition: background-position 0.4s ease;
+  }
+  .btn-gold:hover {
+    background-position: 100% 0;
+  }
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0 1.7rem;
+    border-radius: 999px;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--color-ivory);
+    border: 1px solid rgb(230 207 158 / 0.45);
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .btn-outline:hover {
+    border-color: var(--color-gold);
+    background-color: rgb(230 207 158 / 0.06);
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-gold-mid);
+  }
+  .field {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 1rem;
+    border-radius: 14px;
+    background: var(--color-ink);
+    border: 1px solid rgb(230 207 158 / 0.2);
+    color: var(--color-ivory);
+    font-size: 15px;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-gold);
+  }
+  select.field {
+    appearance: none;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9a66b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  textarea.field {
+    padding: 0.75rem 1rem;
+    min-height: 110px;
+  }
+  .label {
+    display: block;
+    font-size: 13px;
+    color: var(--color-mute);
+    margin-bottom: 6px;
+  }
+}

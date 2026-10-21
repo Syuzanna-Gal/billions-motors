@@ -1,0 +1,20 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { defaultLocale, isLocale } from "@/i18n/config";
+
+// Every page lives under /hy or /en. Requests without a locale are redirected.
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const first = pathname.split("/")[1] ?? "";
+  if (isLocale(first)) return NextResponse.next();
+
+  const preferred = request.headers.get("accept-language")?.toLowerCase() ?? "";
+  const locale = preferred.startsWith("en") && !preferred.includes("hy") ? "en" : defaultLocale;
+  const url = request.nextUrl.clone();
+  url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+  return NextResponse.redirect(url);
+}
+
+export const config = {
+  // Skip API routes, Next internals and files with an extension (images, robots.txt, sitemap.xml…)
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
+};
