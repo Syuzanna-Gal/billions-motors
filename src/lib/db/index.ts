@@ -52,7 +52,27 @@ async function connectPostgres(url: string): Promise<Db> {
   types.setTypeParser(20, (v: string) => Number(v));
   types.setTypeParser(1700, (v: string) => Number(v));
 
-  const pool = new Pool({ connectionString: url, max: 10 });
+  let pool = new Pool({ connectionString: url, max: 10 });
+  try {
+    await pool.query("SELECT 1");
+  } catch (err) {
+    // First run on a fresh PostgreSQL: create the database named in DATABASE_URL, then reconnect.
+    if ((err as { code?: string }).code !== "3D000") throw err;
+    await pool.end();
+    const target = new URL(url);
+    const name = decodeURIComponent(target.pathname.slice(1));
+    if (!/^[a-z_][a-z0-9_]*$/i.test(name)) throw err;
+    const admin = new URL(url);
+    admin.pathname = "/postgres";
+    const adminPool = new Pool({ connectionString: admin.toString(), max: 1 });
+    try {
+      await adminPool.query(`CREATE DATABASE "${name}"`);
+      console.info(`[db] created database ${name}`);
+    } finally {
+      await adminPool.end();
+    }
+    pool = new Pool({ connectionString: url, max: 10 });
+  }
   return {
     async query<T extends Row>(sql: string, params: unknown[] = []) {
       return (await pool.query(sql, params)).rows as T[];
