@@ -1,10 +1,31 @@
-import type { Vehicle } from "./types";
+import type { Vehicle, VehicleColor } from "./types";
 
 /**
  * Development seed data. Replaced by the PostgreSQL `vehicles` table once the
  * real catalog is imported. Prices are null until the business provides them.
+ * Colour names below are placeholders until the real paint options are imported.
  */
-export const mockVehicles: Vehicle[] = [
+const paint = (name: string, hex: string): VehicleColor => ({ name, hex, images: [] });
+const WHITE = paint("Pearl White", "#ecebe6");
+const BLACK = paint("Obsidian Black", "#17171a");
+const GREY = paint("Graphite Grey", "#5b5e63");
+const BLUE = paint("Midnight Blue", "#1f2a44");
+const GREEN = paint("Forest Green", "#2f4a3c");
+const SILVER = paint("Lunar Silver", "#b9bcc0");
+
+const colorsBySlug: Record<string, VehicleColor[]> = {
+  "deepal-s09-4wd-ultra-2026": [BLACK, WHITE, GREY],
+  "byd-seal-06-dm-i-2026": [WHITE, BLACK, BLUE, SILVER],
+  "zeekr-7x-4wd-ultra-2026": [GREY, WHITE, GREEN],
+  "li-l7-ultra-2026": [BLACK, SILVER, WHITE],
+  "changan-a07-550-2026": [WHITE, BLUE, GREY],
+  "zeekr-007-4wd-ultra-2026": [BLACK, WHITE, SILVER],
+  "deepal-s07-dm-2026": [WHITE, GREY, GREEN],
+  "byd-sea-lion-05-520-2025": [WHITE, BLACK, BLUE],
+  "changan-qiyuan-q05-506-2026": [SILVER, WHITE, BLACK],
+};
+
+const base: Omit<Vehicle, "colors">[] = [
   {
     id: 1, slug: "deepal-s09-4wd-ultra-2026", brand: "Deepal", model: "S09", trim: "4WD Ultra+", year: 2026,
     status: "PRE_ORDER", fuelType: "EREV", bodyType: "CROSSOVER", drive: "AWD", transmission: "Single speed",
@@ -69,3 +90,5 @@ export const mockVehicles: Vehicle[] = [
     featured: false, images: [], createdAt: "2026-10-03",
   },
 ];
+
+export const mockVehicles: Vehicle[] = base.map((v) => ({ ...v, colors: colorsBySlug[v.slug] ?? [] }));

@@ -1,17 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import type { VehicleImage } from "@/lib/types";
+import type { VehicleColor, VehicleImage } from "@/lib/types";
 import { CarPhoto } from "./CarPhoto";
 
-type Labels = { exterior: string; interior: string; photo: string; previous: string; next: string };
+type Labels = { exterior: string; interior: string; photo: string; previous: string; next: string; color: string };
 
-export function Gallery({ images, alt, labels }: { images: VehicleImage[]; alt: string; labels: Labels }) {
-  const hasInterior = images.some((i) => i.kind === "INTERIOR");
+export function Gallery({
+  images,
+  colors,
+  alt,
+  labels,
+}: {
+  images: VehicleImage[];
+  colors: VehicleColor[];
+  alt: string;
+  labels: Labels;
+}) {
+  const [colorIndex, setColorIndex] = useState(0);
   const [kind, setKind] = useState<VehicleImage["kind"]>("EXTERIOR");
   const [index, setIndex] = useState(0);
 
-  const list = images.filter((i) => i.kind === kind);
+  const color = colors[colorIndex];
+  // A colour's own photos win; otherwise show the car's general photos.
+  const pool = color && color.images.length ? color.images : images;
+  const hasInterior = pool.some((i) => i.kind === "INTERIOR");
+  const list = pool.filter((i) => i.kind === kind);
   const current = list[index];
   const count = Math.max(list.length, 1);
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
@@ -40,7 +54,18 @@ export function Gallery({ images, alt, labels }: { images: VehicleImage[]; alt: 
       )}
 
       <div className="relative aspect-[16/10] overflow-hidden rounded-[24px] border border-line">
-        <CarPhoto image={current} alt={alt} placeholder={labels.photo} priority />
+        <CarPhoto
+          image={current}
+          alt={color ? `${alt} — ${color.name}` : alt}
+          placeholder={labels.photo}
+          tint={kind === "EXTERIOR" ? color?.hex : undefined}
+          priority
+        />
+        {color && (
+          <span className="absolute left-4 top-4 rounded-full bg-ink/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ivory backdrop-blur">
+            {color.name}
+          </span>
+        )}
         {list.length > 1 && (
           <>
             <NavButton side="left" label={labels.previous} onClick={() => go(-1)} />
@@ -68,6 +93,44 @@ export function Gallery({ images, alt, labels }: { images: VehicleImage[]; alt: 
             </button>
           ))}
         </div>
+      )}
+
+      {colors.length > 0 && (
+        <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[20px] border border-line bg-ink-2 px-5 py-4">
+          <legend className="sr-only">{labels.color}</legend>
+          <span className="text-sm text-mute-2" aria-hidden="true">
+            {labels.color}: <span className="text-ivory">{color?.name}</span>
+          </span>
+          <div className="flex flex-wrap gap-2.5">
+            {colors.map((c, i) => {
+              const active = i === colorIndex;
+              return (
+                <label key={c.name} title={c.name} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="car-color"
+                    value={c.name}
+                    checked={active}
+                    onChange={() => {
+                      setColorIndex(i);
+                      setIndex(0);
+                    }}
+                    className="peer sr-only"
+                  />
+                  <span className="sr-only">{c.name}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`flex size-11 items-center justify-center rounded-full border transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold ${
+                      active ? "border-gold" : "border-line hover:border-gold/50"
+                    }`}
+                  >
+                    <span className="size-8 rounded-full ring-1 ring-white/15" style={{ backgroundColor: c.hex }} />
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
       )}
     </div>
   );

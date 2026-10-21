@@ -53,6 +53,7 @@ export const en = {
     details: "Details →",
     years: "yrs",
     photo: "Car photo",
+    color: "Colour",
     exterior: "Exterior",
     interior: "Interior",
     specs: "Specifications",

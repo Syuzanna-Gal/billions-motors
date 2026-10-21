@@ -9,6 +9,13 @@ export interface VehicleImage {
   alt?: string;
 }
 
+/** One paint option. Photos are per colour; an empty list falls back to the car's main photos. */
+export interface VehicleColor {
+  name: string;
+  hex: string;
+  images: VehicleImage[];
+}
+
 /** Mirrors the planned `vehicles` table; the DB layer will return this same shape. */
 export interface Vehicle {
   id: number;
@@ -36,6 +43,7 @@ export interface Vehicle {
   priceAmd: number | null;
   featured: boolean;
   images: VehicleImage[];
+  colors: VehicleColor[];
   createdAt: string;
 }
 

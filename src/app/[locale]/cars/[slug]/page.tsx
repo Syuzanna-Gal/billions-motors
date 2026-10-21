@@ -61,8 +61,9 @@ export default async function CarPage({ params }: Props) {
         <div className="flex flex-col gap-10">
           <Gallery
             images={car.images}
+            colors={car.colors}
             alt={name}
-            labels={{ exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous, next: t.car.next }}
+            labels={{ exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous, next: t.car.next, color: t.car.color }}
           />
           <Specs car={car} t={t} locale={locale} />
         </div>

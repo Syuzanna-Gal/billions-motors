@@ -55,6 +55,7 @@ export const hy: Dictionary = {
     details: "Մանրամասն →",
     years: "տարի",
     photo: "Մեքենայի լուսանկար",
+    color: "Գույն",
     exterior: "Արտաքին",
     interior: "Ներքին",
     specs: "Բնութագրեր",
