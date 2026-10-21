@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const t = getDictionary(locale);
   return {
     metadataBase: new URL(site.url),
-    title: { default: t.meta.title, template: "%s | Billions" },
+    title: { default: t.meta.title, template: "%s | Billions Motors" },
     description: t.meta.description,
     alternates: { canonical: `/${locale}`, languages: languageAlternates("") },
-    openGraph: { siteName: "Billions", type: "website", locale: localeTags[locale].og },
+    openGraph: { siteName: "Billions Motors", type: "website", locale: localeTags[locale].og },
     robots: site.noindex ? { index: false, follow: false } : { index: true, follow: true },
   };
 }

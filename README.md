@@ -1,6 +1,6 @@
 # Billions Motors
 
-Website for Billions — premium cars imported from China, sold in Yerevan.
+Website for Billions Motors — premium cars imported from China, sold in Yerevan.
 Armenian (`/hy`, default), English (`/en`) and Russian (`/ru`).
 
 ## Stack

@@ -1,6 +1,6 @@
 export const en = {
   meta: {
-    title: "Billions | Premium cars in Yerevan",
+    title: "Billions Motors | Premium cars in Yerevan",
     description:
       "New cars imported directly from China — warranty, financing and full customs support in Yerevan.",
   },
@@ -35,7 +35,7 @@ export const en = {
       { title: "Reserve or apply", text: "Send an offer request, apply for financing or book a test drive." },
       { title: "Handover", text: "We handle the import route, customs and registration, then hand you the keys." },
     ],
-    whyTitle: "Why Billions",
+    whyTitle: "Why Billions Motors",
     why: [
       { title: "Warranty & service", text: "Clear warranty terms, service support and spare-parts guidance in Armenia." },
       { title: "Customs & registration", text: "Every listing shows its customs status and the documents you need." },
@@ -173,7 +173,7 @@ export const en = {
       ],
     },
     about: {
-      title: "About Billions",
+      title: "About Billions Motors",
       lead: "A Yerevan team importing premium cars directly from China.",
       body: [
         "We help you choose, import and register your next car, with honest pricing and full support.",

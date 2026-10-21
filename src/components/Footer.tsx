@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Dictionary, Locale } from "@/i18n";
 import { site, telHref, telegramHref, whatsappHref } from "@/lib/site";
-import { Logo } from "./Logo";
+import { LogoStacked } from "./Logo";
 
 export function Footer({ locale, t }: { locale: Locale; t: Dictionary }) {
   const year = new Date().getFullYear();
@@ -9,7 +9,7 @@ export function Footer({ locale, t }: { locale: Locale; t: Dictionary }) {
     <footer className="mt-24 border-t border-line bg-ink">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-4">
-          <Logo locale={locale} />
+          <LogoStacked locale={locale} />
           <p className="max-w-xs text-sm leading-relaxed text-mute">{t.footer.tagline}</p>
         </div>
         <FooterCol title={t.footer.explore}>
