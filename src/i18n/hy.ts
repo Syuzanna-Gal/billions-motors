@@ -141,9 +141,7 @@ export const hy: Dictionary = {
     phone: "Հեռախոս",
     email: "Էլ. փոստ",
     address: "Սրահ",
-    addressValue: "[Սրահի հասցեն]",
     hours: "Աշխատանքային ժամեր",
-    hoursValue: "[Աշխատանքային ժամեր]",
     formTitle: "Գրեք մեզ",
   },
   pages: {

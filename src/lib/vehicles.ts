@@ -6,8 +6,9 @@ import type {
 
 /*
  * Data access for cars. Every page goes through these functions.
- * Only published cars are shown on the public site.
+ * The public site shows published cars that aren't sold out (stock NULL = not counted).
  */
+const VISIBLE = "v.published AND (v.stock IS NULL OR v.stock > 0)";
 
 interface VehicleRow {
   id: number; slug: string; brand: string; model: string; trim_level: string | null; year: number;
@@ -32,7 +33,7 @@ const ORDER_BY: Record<SortKey, string> = {
 
 export async function listVehicles(locale: Locale, filters: VehicleFilters = {}, limit = 200): Promise<Vehicle[]> {
   const db = await getDb();
-  const where = ["v.published"];
+  const where = [VISIBLE];
   const params: unknown[] = [locale];
   const add = (sql: string, value: unknown) => {
     params.push(value);
@@ -53,7 +54,7 @@ export async function listVehicles(locale: Locale, filters: VehicleFilters = {},
 
 export async function getVehicle(slug: string, locale: Locale): Promise<Vehicle | null> {
   const db = await getDb();
-  const rows = await db.query<VehicleRow & Record<string, unknown>>(`${SELECT_VEHICLE} WHERE v.slug = $2 AND v.published`, [
+  const rows = await db.query<VehicleRow & Record<string, unknown>>(`${SELECT_VEHICLE} WHERE v.slug = $2 AND ${VISIBLE}`, [
     locale,
     slug,
   ]);
@@ -63,16 +64,23 @@ export async function getVehicle(slug: string, locale: Locale): Promise<Vehicle 
 export async function getFeatured(locale: Locale, limit = 3): Promise<Vehicle[]> {
   const db = await getDb();
   const rows = await db.query<VehicleRow & Record<string, unknown>>(
-    `${SELECT_VEHICLE} WHERE v.published ORDER BY v.featured DESC, v.created_at DESC LIMIT $2`,
+    `${SELECT_VEHICLE} WHERE ${VISIBLE} ORDER BY v.featured DESC, v.created_at DESC LIMIT $2`,
     [locale, limit],
   );
   return hydrate(db, rows, locale);
 }
 
+/** "You may also like": the cars picked in the admin, otherwise the newest cars with the same body type. */
 export async function getSimilar(vehicle: Vehicle, locale: Locale, limit = 3): Promise<Vehicle[]> {
   const db = await getDb();
+  const picked = await db.query<VehicleRow & Record<string, unknown>>(
+    `${SELECT_VEHICLE} JOIN vehicle_related r ON r.related_id = v.id AND r.vehicle_id = $2
+     WHERE ${VISIBLE} ORDER BY r.position LIMIT 6`,
+    [locale, vehicle.id],
+  );
+  if (picked.length) return hydrate(db, picked, locale);
   const rows = await db.query<VehicleRow & Record<string, unknown>>(
-    `${SELECT_VEHICLE} WHERE v.published AND v.id <> $2 AND v.body_type = $3 ORDER BY v.created_at DESC LIMIT $4`,
+    `${SELECT_VEHICLE} WHERE ${VISIBLE} AND v.id <> $2 AND v.body_type = $3 ORDER BY v.created_at DESC LIMIT $4`,
     [locale, vehicle.id, vehicle.bodyType, limit],
   );
   return hydrate(db, rows, locale);
@@ -80,13 +88,13 @@ export async function getSimilar(vehicle: Vehicle, locale: Locale, limit = 3): P
 
 export async function getBrands(): Promise<string[]> {
   const db = await getDb();
-  const rows = await db.query<{ brand: string }>("SELECT DISTINCT brand FROM vehicles WHERE published ORDER BY brand");
+  const rows = await db.query<{ brand: string }>(`SELECT DISTINCT v.brand FROM vehicles v WHERE ${VISIBLE} ORDER BY v.brand`);
   return rows.map((r) => r.brand);
 }
 
 export async function getAllSlugs(): Promise<string[]> {
   const db = await getDb();
-  const rows = await db.query<{ slug: string }>("SELECT slug FROM vehicles WHERE published ORDER BY created_at DESC");
+  const rows = await db.query<{ slug: string }>(`SELECT v.slug FROM vehicles v WHERE ${VISIBLE} ORDER BY v.created_at DESC`);
   return rows.map((r) => r.slug);
 }
 

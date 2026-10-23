@@ -14,7 +14,7 @@ export type Row = Record<string, unknown>;
 export type Tx = Pick<Db, "query" | "exec">;
 
 export interface Db {
-  query<T extends Row = Row>(sql: string, params?: unknown[]): Promise<T[]>;
+  query<T extends object = Row>(sql: string, params?: unknown[]): Promise<T[]>;
   /** Runs several statements atomically. */
   transaction<T>(fn: (tx: Tx) => Promise<T>): Promise<T>;
   exec(sql: string): Promise<void>;
@@ -23,10 +23,20 @@ export interface Db {
 declare global {
   // Cached on globalThis so Next.js hot reload doesn't open a new database each time.
   var __billionsDb: Promise<Db> | undefined;
+  var __billionsDbMigrations: number | undefined;
 }
 
 export function getDb(): Promise<Db> {
+  // In development the connection survives code reloads; apply migrations added since it opened.
+  if (globalThis.__billionsDb && globalThis.__billionsDbMigrations !== migrations.length) {
+    globalThis.__billionsDbMigrations = migrations.length;
+    globalThis.__billionsDb = globalThis.__billionsDb.then(async (db) => {
+      await migrate(db);
+      return db;
+    });
+  }
   if (!globalThis.__billionsDb) {
+    globalThis.__billionsDbMigrations = migrations.length;
     globalThis.__billionsDb = connect().catch((err) => {
       globalThis.__billionsDb = undefined; // allow a retry on the next request
       throw err;
@@ -74,7 +84,7 @@ async function connectPostgres(url: string): Promise<Db> {
     pool = new Pool({ connectionString: url, max: 10 });
   }
   return {
-    async query<T extends Row>(sql: string, params: unknown[] = []) {
+    async query<T extends object>(sql: string, params: unknown[] = []) {
       return (await pool.query(sql, params)).rows as T[];
     },
     async exec(sql) {
@@ -85,7 +95,7 @@ async function connectPostgres(url: string): Promise<Db> {
       try {
         await client.query("BEGIN");
         const result = await fn({
-          query: async <T extends Row>(sql: string, params: unknown[] = []) => (await client.query(sql, params)).rows as T[],
+          query: async <T extends object>(sql: string, params: unknown[] = []) => (await client.query(sql, params)).rows as T[],
           exec: async (sql: string) => {
             await client.query(sql);
           },
@@ -115,7 +125,7 @@ async function connectPglite(): Promise<Db> {
   });
   await pg.waitReady;
   return {
-    async query<T extends Row>(sql: string, params: unknown[] = []) {
+    async query<T extends object>(sql: string, params: unknown[] = []) {
       return (await pg.query<T>(sql, params)).rows;
     },
     async exec(sql) {
@@ -124,7 +134,7 @@ async function connectPglite(): Promise<Db> {
     async transaction(fn) {
       return pg.transaction((tx) =>
         fn({
-          query: async <T extends Row>(sql: string, params: unknown[] = []) => (await tx.query<T>(sql, params)).rows,
+          query: async <T extends object>(sql: string, params: unknown[] = []) => (await tx.query<T>(sql, params)).rows,
           exec: async (sql: string) => {
             await tx.exec(sql);
           },

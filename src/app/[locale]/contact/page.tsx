@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale } from "@/i18n";
-import { site, telHref, telegramHref, whatsappHref } from "@/lib/site";
+import { getContact } from "@/lib/settings";
 import { LeadForm } from "@/components/LeadForm";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -18,13 +18,14 @@ export default async function ContactPage({ params }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
+  const contact = await getContact(locale);
 
-  const items = [
-    { label: t.contact.phone, value: site.phone, href: telHref() },
-    { label: t.contact.email, value: site.email, href: `mailto:${site.email}` },
-    { label: t.contact.address, value: t.contact.addressValue },
-    { label: t.contact.hours, value: t.contact.hoursValue },
-  ];
+  const items: { label: string; value: string; href?: string }[] = [
+    { label: t.contact.phone, value: contact.phone, href: contact.telHref },
+    { label: t.contact.email, value: contact.email, href: `mailto:${contact.email}` },
+    { label: t.contact.address, value: contact.address, href: contact.mapUrl ?? undefined },
+    { label: t.contact.hours, value: contact.hours },
+  ].filter((i) => i.value);
 
   return (
     <>
@@ -35,15 +36,15 @@ export default async function ContactPage({ params }: Props) {
             {items.map((item) => (
               <div key={item.label} className="rounded-[var(--radius-card)] border border-line bg-ink-2 p-6">
                 <dt className="eyebrow !text-[11px]">{item.label}</dt>
-                <dd className="mt-3 text-lg">
+                <dd className="mt-3 whitespace-pre-line text-lg">
                   {item.href ? <a href={item.href} className="hover:text-gold">{item.value}</a> : item.value}
                 </dd>
               </div>
             ))}
           </dl>
           <div className="flex flex-wrap gap-3">
-            <a href={whatsappHref()} className="btn-gold">WhatsApp</a>
-            <a href={telegramHref()} className="btn-outline">Telegram</a>
+            {contact.whatsappHref && <a href={contact.whatsappHref} className="btn-gold">WhatsApp</a>}
+            {contact.telegramHref && <a href={contact.telegramHref} className="btn-outline">Telegram</a>}
           </div>
         </div>
         <div className="rounded-[24px] border border-line bg-ink-2 p-6 sm:p-8">

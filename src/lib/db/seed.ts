@@ -86,6 +86,8 @@ export async function seedDemoData(db: Db) {
         }
       }
     }
+    // Demo stock: two of each in-stock car; pre-order / in-transit cars aren't counted.
+    await tx.query("UPDATE vehicles SET stock = 2 WHERE status = 'IN_STOCK'");
   });
   console.info(`[db] seeded ${CARS.length} demo cars`);
 }

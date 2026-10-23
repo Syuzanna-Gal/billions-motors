@@ -139,9 +139,7 @@ export const en = {
     phone: "Phone",
     email: "Email",
     address: "Showroom",
-    addressValue: "[Showroom address]",
     hours: "Opening hours",
-    hoursValue: "[Opening hours]",
     formTitle: "Send us a message",
   },
   pages: {

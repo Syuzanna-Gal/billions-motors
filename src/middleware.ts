@@ -19,6 +19,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip API routes, Next internals and files with an extension (images, robots.txt, sitemap.xml…)
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // Skip the admin panel, API routes, Next internals and files with an extension (images, robots.txt, sitemap.xml…)
+  matcher: ["/((?!admin|api|_next|.*\\..*).*)"],
 };

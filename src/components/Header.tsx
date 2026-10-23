@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Dictionary, Locale } from "@/i18n";
-import { telHref } from "@/lib/site";
+import type { Contact } from "@/lib/settings";
 import { LangSwitch } from "./LangSwitch";
 import { Logo } from "./Logo";
 
@@ -15,7 +15,7 @@ export function navItems(locale: Locale, t: Dictionary) {
   ];
 }
 
-export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
+export function Header({ locale, t, contact }: { locale: Locale; t: Dictionary; contact: Contact }) {
   const items = navItems(locale, t);
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-ink/85 backdrop-blur-md">
@@ -36,7 +36,7 @@ export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
 
         <div className="flex items-center gap-3">
           <LangSwitch locale={locale} />
-          <a href={telHref()} className="btn-gold hidden !min-h-11 !px-5 !text-sm sm:inline-flex">
+          <a href={contact.telHref} className="btn-gold hidden !min-h-11 !px-5 !text-sm sm:inline-flex">
             {t.nav.callUs}
           </a>
 
@@ -64,7 +64,7 @@ export function Header({ locale, t }: { locale: Locale; t: Dictionary }) {
                   </li>
                 ))}
                 <li className="mt-2">
-                  <a href={telHref()} className="btn-gold w-full">
+                  <a href={contact.telHref} className="btn-gold w-full">
                     {t.nav.callUs}
                   </a>
                 </li>

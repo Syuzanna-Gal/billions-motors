@@ -9,6 +9,7 @@ import "@fontsource-variable/noto-serif-armenian";
 import "../globals.css";
 import { getDictionary, isLocale, languageAlternates, localeTags, locales } from "@/i18n";
 import { site } from "@/lib/site";
+import { getContact } from "@/lib/settings";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
@@ -43,6 +44,7 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
+  const contact = await getContact(locale);
 
   return (
     <html lang={locale}>
@@ -50,9 +52,9 @@ export default async function LocaleLayout({
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 btn-gold">
           Skip to content
         </a>
-        <Header locale={locale} t={t} />
+        <Header locale={locale} t={t} contact={contact} />
         <main id="main">{children}</main>
-        <Footer locale={locale} t={t} />
+        <Footer locale={locale} t={t} contact={contact} />
         <RevealObserver />
         {/* Without JavaScript, show everything instead of waiting for the scroll reveal. */}
         <noscript>

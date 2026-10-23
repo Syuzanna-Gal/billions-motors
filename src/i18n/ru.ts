@@ -141,9 +141,7 @@ export const ru: Dictionary = {
     phone: "Телефон",
     email: "Эл. почта",
     address: "Шоурум",
-    addressValue: "[Адрес шоурума]",
     hours: "Часы работы",
-    hoursValue: "[Часы работы]",
     formTitle: "Напишите нам",
   },
   pages: {

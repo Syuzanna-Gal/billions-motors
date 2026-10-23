@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getDictionary, isLocale } from "@/i18n";
 import { getFeatured, listVehicles } from "@/lib/vehicles";
 import { vehicleName } from "@/lib/format";
-import { whatsappHref } from "@/lib/site";
+import { getContact } from "@/lib/settings";
 import { CarCard } from "@/components/CarCard";
 import { CarPhoto } from "@/components/CarPhoto";
 import { Ticker } from "@/components/Ticker";
@@ -17,7 +17,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
 
-  const [[hero], collection] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, 8)]);
+  const [[hero], collection, contact] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, 8), getContact(locale)]);
 
   return (
     <>
@@ -136,9 +136,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <p className="mt-3 text-lg text-mute">{t.home.ctaText}</p>
             </div>
             <div className="flex flex-wrap gap-3.5">
-              <a href={whatsappHref()} className="btn-gold">
-                WhatsApp
-              </a>
+              {contact.whatsappHref && (
+                <a href={contact.whatsappHref} className="btn-gold">
+                  WhatsApp
+                </a>
+              )}
               <Link href={`/${locale}/contact`} className="btn-outline">
                 {t.nav.contact}
               </Link>

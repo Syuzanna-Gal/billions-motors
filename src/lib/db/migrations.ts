@@ -106,4 +106,64 @@ export const migrations: { id: string; sql: string }[] = [
       );
     `,
   },
+  {
+    id: "002_admin",
+    sql: /* sql */ `
+      -- Two roles: FULL (everything) and SALES (only records sales).
+      ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_role_check;
+      UPDATE admin_users SET role = CASE WHEN role = 'ADMIN' THEN 'FULL' ELSE 'SALES' END;
+      ALTER TABLE admin_users ALTER COLUMN role SET DEFAULT 'SALES';
+      ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_check CHECK (role IN ('FULL', 'SALES'));
+
+      -- Login sessions. The id is a SHA-256 of the cookie token, so a DB leak can't be replayed.
+      CREATE TABLE admin_sessions (
+        id          text PRIMARY KEY,
+        user_id     integer NOT NULL REFERENCES admin_users (id) ON DELETE CASCADE,
+        created_at  timestamptz NOT NULL DEFAULT now(),
+        expires_at  timestamptz NOT NULL
+      );
+      CREATE INDEX admin_sessions_user_idx ON admin_sessions (user_id);
+
+      -- Units available. NULL = not tracked (pre-order / in transit). At 0 the car is hidden from the site.
+      ALTER TABLE vehicles ADD COLUMN stock integer CHECK (stock IS NULL OR stock >= 0);
+      UPDATE vehicles SET stock = 1 WHERE status = 'IN_STOCK';
+
+      -- Every sale a salesperson records. Names are copied so history survives edits and deletes.
+      CREATE TABLE sales (
+        id              serial PRIMARY KEY,
+        vehicle_id      integer REFERENCES vehicles (id) ON DELETE SET NULL,
+        vehicle_name    text NOT NULL,
+        color_id        integer REFERENCES vehicle_colors (id) ON DELETE SET NULL,
+        color_name      text,
+        quantity        integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
+        price_amd       bigint CHECK (price_amd IS NULL OR price_amd > 0),
+        customer_name   text,
+        customer_phone  text,
+        note            text,
+        stock_tracked   boolean NOT NULL,
+        sold_by         integer REFERENCES admin_users (id) ON DELETE SET NULL,
+        sold_by_name    text NOT NULL,
+        created_at      timestamptz NOT NULL DEFAULT now(),
+        cancelled_at    timestamptz,
+        cancelled_by    text
+      );
+      CREATE INDEX sales_created_idx ON sales (created_at DESC);
+
+      -- Hand-picked "You may also like" cars. Empty = automatic (same body type).
+      CREATE TABLE vehicle_related (
+        vehicle_id  integer NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+        related_id  integer NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+        position    smallint NOT NULL DEFAULT 0,
+        PRIMARY KEY (vehicle_id, related_id),
+        CHECK (vehicle_id <> related_id)
+      );
+
+      -- Editable site settings (contact info). Missing keys fall back to .env defaults.
+      CREATE TABLE site_settings (
+        key         text PRIMARY KEY,
+        value       text NOT NULL,
+        updated_at  timestamptz NOT NULL DEFAULT now()
+      );
+    `,
+  },
 ];

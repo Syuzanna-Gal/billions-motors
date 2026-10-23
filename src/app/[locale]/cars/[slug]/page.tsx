@@ -5,7 +5,7 @@ import { getDictionary, isLocale, languageAlternates, type Dictionary, type Loca
 import { getSimilar, getVehicle } from "@/lib/vehicles";
 import { formatAmd, formatNumber, vehicleName } from "@/lib/format";
 import { calculateLoan } from "@/lib/loan";
-import { telHref, whatsappHref } from "@/lib/site";
+import { getContact } from "@/lib/settings";
 import type { Vehicle } from "@/lib/types";
 import { CarCard } from "@/components/CarCard";
 import { Gallery } from "@/components/Gallery";
@@ -43,7 +43,7 @@ export default async function CarPage({ params }: Props) {
   if (!car) notFound();
   const t = getDictionary(locale);
   const name = vehicleName(car);
-  const similar = await getSimilar(car, locale);
+  const [similar, contact] = await Promise.all([getSimilar(car, locale), getContact(locale)]);
 
   // Same defaults as the loan calculator page: 30% down, 48 months.
   const monthly = car.priceAmd ? calculateLoan(car.priceAmd, car.priceAmd * 0.3, 14, 48).monthly : null;
@@ -84,8 +84,8 @@ export default async function CarPage({ params }: Props) {
               </p>
             )}
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <a href={whatsappHref()} className="btn-gold">WhatsApp</a>
-              <a href={telHref()} className="btn-outline">{t.car.callNow}</a>
+              {contact.whatsappHref && <a href={contact.whatsappHref} className="btn-gold">WhatsApp</a>}
+              <a href={contact.telHref} className="btn-outline">{t.car.callNow}</a>
               <Link
                 href={`/${locale}/loan-calculator${car.priceAmd ? `?price=${car.priceAmd}` : ""}`}
                 className="btn-outline sm:col-span-2"
