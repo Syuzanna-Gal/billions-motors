@@ -24,9 +24,17 @@ declare global {
   // Cached on globalThis so Next.js hot reload doesn't open a new database each time.
   var __billionsDb: Promise<Db> | undefined;
   var __billionsDbMigrations: number | undefined;
+  var __billionsDbUrl: string | undefined;
 }
 
 export function getDb(): Promise<Db> {
+  // In development .env.local is reloaded without a restart: switch databases when DATABASE_URL changes.
+  const url = process.env.DATABASE_URL ?? "";
+  if (globalThis.__billionsDb && globalThis.__billionsDbUrl !== url) {
+    console.info("[db] DATABASE_URL changed, reconnecting");
+    globalThis.__billionsDb = undefined;
+  }
+  globalThis.__billionsDbUrl = url;
   // In development the connection survives code reloads; apply migrations added since it opened.
   if (globalThis.__billionsDb && globalThis.__billionsDbMigrations !== migrations.length) {
     globalThis.__billionsDbMigrations = migrations.length;
