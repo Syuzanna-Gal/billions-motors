@@ -11,7 +11,7 @@ export function StatusBadge({
       className={`gold-gradient inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink ${className}`}
     >
       {t.status[status]}
-      {showCount && <span className="ml-1.5 normal-case tracking-normal">· {stock} {t.units.pcs}</span>}
+      {showCount && <span className="ml-1.5 normal-case tracking-normal">· {stock} {stock === 1 ? t.units.pc : t.units.pcs}</span>}
     </span>
   );
 }
