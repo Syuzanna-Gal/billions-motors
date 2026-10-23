@@ -15,7 +15,7 @@ interface VehicleRow {
   status: VehicleStatus; fuel_type: FuelType; body_type: BodyType; drive: DriveType;
   horsepower: number; ev_range_km: number | null; battery_kwh: number | null; accel_0_100: number | null;
   top_speed_kmh: number | null; seats: number; length_mm: number | null; width_mm: number | null; height_mm: number | null;
-  warranty_years: number; warranty_km: number; price_amd: number | null; featured: boolean; created_at: Date | string;
+  warranty_years: number; warranty_km: number; price_amd: number | null; stock: number | null; featured: boolean; created_at: Date | string;
   transmission: string | null; description: string | null;
 }
 
@@ -164,6 +164,7 @@ async function hydrate(db: Db, rows: VehicleRow[], locale: Locale): Promise<Vehi
       warrantyYears: r.warranty_years,
       warrantyKm: r.warranty_km,
       priceAmd: r.price_amd,
+      stock: r.stock,
       featured: r.featured,
       images: general.length ? general : (colors.find((c) => c.images.length)?.images ?? []),
       colors,

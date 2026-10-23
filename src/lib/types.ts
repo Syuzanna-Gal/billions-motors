@@ -45,6 +45,8 @@ export interface Vehicle {
   warrantyYears: number;
   warrantyKm: number;
   priceAmd: number | null;
+  /** Cars left; null = not counted (pre-order / in transit). */
+  stock: number | null;
   featured: boolean;
   images: VehicleImage[];
   colors: VehicleColor[];
