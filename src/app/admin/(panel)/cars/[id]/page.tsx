@@ -114,7 +114,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
               <li key={img.id} className="overflow-hidden rounded-2xl border border-line bg-ink-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt="" className="aspect-[16/10] w-full object-cover" />
-                <form action={updatePhotoAction} className="grid grid-cols-2 gap-2 p-3">
+                <form key={`${img.color_id}-${img.kind}`} action={updatePhotoAction} className="grid grid-cols-2 gap-2 p-3">
                   <input type="hidden" name="vehicle_id" value={car.id} />
                   <input type="hidden" name="image_id" value={img.id} />
                   <ColorSelect colors={car.colors} id={`c-${img.id}`} value={img.color_id} />

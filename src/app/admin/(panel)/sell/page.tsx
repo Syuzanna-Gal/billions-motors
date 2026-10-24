@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { listSales, listSellableCars } from "@/lib/admin/sales";
 import { cancelSaleAction } from "../../actions";
 import { SellForm } from "./SellForm";
+import { ConfirmSubmit } from "../../_components/ConfirmSubmit";
 
 export const metadata = { title: "Sell a car" };
 
@@ -45,9 +46,9 @@ export default async function SellPage() {
                 {!s.cancelled_at && (user.role === "FULL" || s.sold_by === user.id) && (
                   <form action={cancelSaleAction}>
                     <input type="hidden" name="sale_id" value={s.id} />
-                    <button type="submit" className="rounded-full border border-line px-4 py-2 text-xs text-mute hover:border-gold/50 hover:text-ivory">
+                    <ConfirmSubmit message="Undo this sale? The stock goes back up." className="rounded-full border border-line px-4 py-2 text-xs text-mute hover:border-gold/50 hover:text-ivory">
                       Undo
-                    </button>
+                    </ConfirmSubmit>
                   </form>
                 )}
               </li>

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { listUsers } from "@/lib/admin/users";
 import { createUserAction, deleteUserAction, resetPasswordAction, updateUserAction } from "../../actions";
+import { ConfirmSubmit } from "../../_components/ConfirmSubmit";
 
 export const metadata = { title: "Users" };
 
@@ -21,7 +22,7 @@ export default async function UsersPage() {
       <ul className="flex flex-col gap-3">
         {users.map((u) => (
           <li key={u.id} className="rounded-2xl border border-line bg-ink-2 p-4">
-            <form action={updateUserAction} className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem_auto]">
+            <form key={u.role} action={updateUserAction} className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_9rem_auto]">
               <input type="hidden" name="id" value={u.id} />
               <div>
                 <p className="label">Email</p>
@@ -54,7 +55,7 @@ export default async function UsersPage() {
                 {u.id !== me.id && (
                   <form action={deleteUserAction}>
                     <input type="hidden" name="id" value={u.id} />
-                    <button type="submit" className="min-h-12 rounded-full px-4 text-sm text-mute hover:text-[#f0a58f]">Delete user</button>
+                    <ConfirmSubmit className="min-h-12 rounded-full px-4 text-sm text-mute hover:text-[#f0a58f]" message={`Delete the user ${u.email}?`}>Delete user</ConfirmSubmit>
                   </form>
                 )}
               </div>

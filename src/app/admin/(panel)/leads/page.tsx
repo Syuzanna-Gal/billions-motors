@@ -51,7 +51,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   {l.email && <p className="mt-1 text-sm text-mute">{l.email}</p>}
                   {l.message && <p className="mt-2 whitespace-pre-line text-sm text-mute">{l.message}</p>}
                 </div>
-                <form action={setLeadStatusAction} className="flex items-center gap-2">
+                <form key={l.status} action={setLeadStatusAction} className="flex items-center gap-2">
                   <input type="hidden" name="id" value={l.id} />
                   <label htmlFor={`st-${l.id}`} className="sr-only">Status</label>
                   <select id={`st-${l.id}`} name="status" defaultValue={l.status} className="field !min-h-10 !w-auto">
