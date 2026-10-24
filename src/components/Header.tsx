@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Dictionary, Locale } from "@/i18n";
 import type { Contact } from "@/lib/settings";
+import { CloseMenuOnNavigate } from "./CloseMenuOnNavigate";
 import { LangSwitch } from "./LangSwitch";
 import { Logo } from "./Logo";
 
@@ -70,6 +71,7 @@ export function Header({ locale, t, contact }: { locale: Locale; t: Dictionary; 
                 </li>
               </ul>
             </nav>
+            <CloseMenuOnNavigate />
           </details>
         </div>
       </div>

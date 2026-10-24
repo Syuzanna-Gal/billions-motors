@@ -14,6 +14,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
 
+const EARLY_REVEAL = `(function(){try{
+if(!("IntersectionObserver" in window))return;
+var els=document.querySelectorAll('[data-reveal]:not([data-reveal="in"])');
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){els.forEach(function(e){e.dataset.reveal="in"});return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.dataset.reveal="in";io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px",threshold:0.08});
+els.forEach(function(e){io.observe(e)});
+}catch(e){}})();`;
+
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
@@ -55,6 +63,9 @@ export default async function LocaleLayout({
         <Header locale={locale} t={t} contact={contact} />
         <main id="main">{children}</main>
         <Footer locale={locale} t={t} contact={contact} />
+        {/* Starts the scroll reveal as soon as the HTML is parsed, so the first screen doesn't
+            stay empty while the JavaScript bundle loads on a slow phone. RevealObserver takes over after. */}
+        <script dangerouslySetInnerHTML={{ __html: EARLY_REVEAL }} />
         <RevealObserver />
         {/* Without JavaScript, show everything instead of waiting for the scroll reveal. */}
         <noscript>

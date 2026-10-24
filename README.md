@@ -10,7 +10,8 @@ Armenian (`/hy`, default), English (`/en`) and Russian (`/ru`).
 - Fonts self-hosted via Fontsource: Cormorant Garamond, Inter, Noto Sans/Serif Armenian
 - **PostgreSQL** for cars, translations, colours, photos, leads and admin users
   (embedded PGlite locally — no install; a real PostgreSQL server via `DATABASE_URL` in production)
-- Planned: admin panel
+- **Admin panel** at `/admin`: Full role (cars, colours, photos, “You may also like”, contact info, users,
+  requests) and Sales role (only “Sell a car”). The first visit creates the first Full user.
 
 ## Run locally
 
@@ -27,7 +28,12 @@ npm run dev          # http://localhost:3000 → redirects to /hy
 Locally nothing to install: on first start the app creates an embedded PostgreSQL in
 `.data/pglite`, applies the migrations and inserts the demo cars. Delete `.data/` to start fresh.
 
-To inspect it, or in production, use a regular PostgreSQL and set `DATABASE_URL`.
+To inspect it, or in production, use a regular PostgreSQL and set `DATABASE_URL`
+(locally: Postgres.app, `DATABASE_URL=postgres://<mac user>@localhost:5432/billions`). The database
+and tables are created automatically on first start.
+
+For testing, `DEV_TEST_PASSWORD` in `.env.local` creates two dev-only admin users,
+`test-full@billions.local` and `test-sales@billions.local` (never in production).
 
 ## Project layout
 

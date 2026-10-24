@@ -54,7 +54,7 @@ export function LeadForm({ t, type, vehicleSlug, locale, submitLabel, extra }: P
       <div>
         <label htmlFor={`${id}-phone`} className="label">{t.phone} *</label>
         <input id={`${id}-phone`} name="phone" type="tel" required autoComplete="tel" inputMode="tel"
-          pattern="[+0-9 ()-]{6,20}" placeholder="+374" className="field" />
+          pattern="[0-9 +\(\)\-]{6,20}" placeholder="+374" className="field" />
       </div>
       <div>
         <label htmlFor={`${id}-email`} className="label">{t.email}</label>
