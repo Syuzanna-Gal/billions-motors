@@ -46,35 +46,30 @@ export default async function ContactPage({ params }: Props) {
           <div className="flex flex-wrap gap-3">
             {contact.whatsappHref && <a href={contact.whatsappHref} className="btn-gold">WhatsApp</a>}
             {contact.telegramHref && <a href={contact.telegramHref} className="btn-outline">Telegram</a>}
+            {contact.mapUrl && (
+              <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="btn-outline">
+                {t.contact.openMap} ↗
+              </a>
+            )}
           </div>
+          {contact.mapEmbed && (
+            // Fills the rest of the column, level with the bottom of the form. Toned dark for the noir design.
+            <div className="min-h-[300px] flex-1 overflow-hidden rounded-[var(--radius-card)] border border-line bg-ink-2" {...reveal(120)}>
+              <iframe
+                src={contact.mapEmbed}
+                title={t.contact.map}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="block size-full min-h-[300px] border-0 [filter:invert(0.9)_hue-rotate(180deg)_saturate(0.55)_brightness(0.95)]"
+              />
+            </div>
+          )}
         </div>
         <div className="rounded-[24px] border border-line bg-ink-2 p-6 sm:p-8">
           <h2 className="mb-6 font-serif text-3xl font-medium">{t.contact.formTitle}</h2>
           <LeadForm t={t.form} type="CONTACT" locale={locale} />
         </div>
       </section>
-      {contact.mapEmbed && (
-        <section className="container-page mt-8" {...reveal()}>
-          <div className="overflow-hidden rounded-[24px] border border-line bg-ink-2">
-            {/* Google's map, toned dark to sit with the noir design. */}
-            <iframe
-              src={contact.mapEmbed}
-              title={t.contact.map}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="block h-[320px] w-full border-0 [filter:invert(0.9)_hue-rotate(180deg)_saturate(0.55)_brightness(0.95)] sm:h-[420px]"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-3 p-5">
-              <p className="text-sm text-mute">{contact.address}</p>
-              {contact.mapUrl && (
-                <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gold hover:text-ivory">
-                  {t.contact.openMap} ↗
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
     </>
   );
 }
