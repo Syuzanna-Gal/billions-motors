@@ -18,7 +18,7 @@ const EARLY_REVEAL = `(function(){try{
 if(!("IntersectionObserver" in window))return;
 var els=document.querySelectorAll('[data-reveal]:not([data-reveal="in"])');
 if(matchMedia("(prefers-reduced-motion: reduce)").matches){els.forEach(function(e){e.dataset.reveal="in"});return;}
-var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.dataset.reveal="in";io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px",threshold:0.08});
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting||e.boundingClientRect.bottom<0){e.target.dataset.reveal="in";io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px",threshold:0.08});
 els.forEach(function(e){io.observe(e)});
 }catch(e){}})();`;
 

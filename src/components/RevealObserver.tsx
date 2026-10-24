@@ -15,7 +15,8 @@ export function RevealObserver() {
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
+          // Also show anything already above the screen (scrolled past, or restored by Back).
+          if (!entry.isIntersecting && entry.boundingClientRect.bottom >= 0) continue;
           (entry.target as HTMLElement).dataset.reveal = "in";
           io.unobserve(entry.target);
         }

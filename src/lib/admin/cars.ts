@@ -69,6 +69,10 @@ export interface CarListItem {
   id: number;
   slug: string;
   name: string;
+  brand: string;
+  model: string;
+  trim_level: string | null;
+  year: number;
   status: VehicleStatus;
   stock: number | null;
   price_amd: number | null;
@@ -83,8 +87,8 @@ export const carName = (r: { brand: string; model: string; trim_level: string | 
 
 export async function listCarsAdmin(): Promise<CarListItem[]> {
   const db = await getDb();
-  const rows = await db.query<Omit<CarListItem, "name"> & { brand: string; model: string; trim_level: string | null }>(
-    `SELECT v.id, v.slug, v.brand, v.model, v.trim_level, v.status, v.stock, v.price_amd, v.published, v.featured,
+  const rows = await db.query<Omit<CarListItem, "name">>(
+    `SELECT v.id, v.slug, v.brand, v.model, v.trim_level, v.year, v.status, v.stock, v.price_amd, v.published, v.featured,
             (SELECT count(*)::int FROM vehicle_images i WHERE i.vehicle_id = v.id) AS photos
      FROM vehicles v ORDER BY v.brand, v.model, v.year DESC, v.id`,
   );
