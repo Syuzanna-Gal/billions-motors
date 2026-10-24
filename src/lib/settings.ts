@@ -9,7 +9,7 @@ import { getDb } from "./db";
 
 export const SETTING_KEYS = [
   "phone", "whatsapp", "telegram", "email", "instagram", "facebook",
-  "address_hy", "address_en", "address_ru", "hours_hy", "hours_en", "hours_ru", "map_url",
+  "address_hy", "address_en", "address_ru", "hours_hy", "hours_en", "hours_ru", "map_url", "map_location",
 ] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 export type Settings = Record<SettingKey, string>;
@@ -24,6 +24,7 @@ const DEFAULTS: Settings = {
   address_hy: "", address_en: "", address_ru: "",
   hours_hy: "", hours_en: "", hours_ru: "",
   map_url: "",
+  map_location: "",
 };
 
 export const getSettings = cache(async (): Promise<Settings> => {
@@ -60,12 +61,15 @@ export interface Contact {
   address: string;
   hours: string;
   mapUrl: string | null;
+  /** Google Maps embed for the contact page, from the showroom coordinates. */
+  mapEmbed: string | null;
 }
 
 export async function getContact(locale: Locale): Promise<Contact> {
   const s = await getSettings();
   const digits = (v: string) => v.replace(/[^\d]/g, "");
   const url = (v: string) => (/^https:\/\//.test(v) ? v : null);
+  const point = parseMapLocation(s.map_location);
   return {
     phone: s.phone,
     telHref: `tel:${s.phone.replace(/[^+\d]/g, "")}`,
@@ -76,6 +80,25 @@ export async function getContact(locale: Locale): Promise<Contact> {
     facebook: url(s.facebook),
     address: s[`address_${locale}`],
     hours: s[`hours_${locale}`],
-    mapUrl: url(s.map_url),
+    mapUrl: url(s.map_url) ?? (point ? `https://www.google.com/maps?q=${point}` : null),
+    mapEmbed: point ? `https://www.google.com/maps?q=${point}&hl=${locale}&z=16&output=embed` : null,
   };
+}
+
+/**
+ * Finds the showroom coordinates in what the admin pasted: plain "40.2231, 44.5315" or a
+ * full Google Maps link (the pin's !3d…!4d… is preferred over the map centre @lat,lng).
+ * Returns "lat,lng" or null.
+ */
+export function parseMapLocation(input: string): string | null {
+  const v = input.trim();
+  if (!v) return null;
+  const m =
+    /!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/.exec(v) ??
+    /(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/.exec(v);
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lng = Number(m[2]);
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return `${lat},${lng}`;
 }

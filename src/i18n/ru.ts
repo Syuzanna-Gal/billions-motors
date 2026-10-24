@@ -144,6 +144,8 @@ export const ru: Dictionary = {
     address: "Шоурум",
     hours: "Часы работы",
     formTitle: "Напишите нам",
+    map: "Салон на карте",
+    openMap: "Открыть в Google Maps",
   },
   pages: {
     financing: {

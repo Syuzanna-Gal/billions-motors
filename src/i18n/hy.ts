@@ -144,6 +144,8 @@ export const hy: Dictionary = {
     address: "Սրահ",
     hours: "Աշխատանքային ժամեր",
     formTitle: "Գրեք մեզ",
+    map: "Սրահը քարտեզի վրա",
+    openMap: "Բացել Google Maps-ում",
   },
   pages: {
     financing: {

@@ -142,6 +142,8 @@ export const en = {
     address: "Showroom",
     hours: "Opening hours",
     formTitle: "Send us a message",
+    map: "Showroom on the map",
+    openMap: "Open in Google Maps",
   },
   pages: {
     financing: {

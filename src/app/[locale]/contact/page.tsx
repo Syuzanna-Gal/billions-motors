@@ -4,6 +4,7 @@ import { getDictionary, isLocale } from "@/i18n";
 import { getContact } from "@/lib/settings";
 import { LeadForm } from "@/components/LeadForm";
 import { PageHeader } from "@/components/PageHeader";
+import { reveal } from "@/lib/reveal";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -52,6 +53,28 @@ export default async function ContactPage({ params }: Props) {
           <LeadForm t={t.form} type="CONTACT" locale={locale} />
         </div>
       </section>
+      {contact.mapEmbed && (
+        <section className="container-page mt-8" {...reveal()}>
+          <div className="overflow-hidden rounded-[24px] border border-line bg-ink-2">
+            {/* Google's map, toned dark to sit with the noir design. */}
+            <iframe
+              src={contact.mapEmbed}
+              title={t.contact.map}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="block h-[320px] w-full border-0 [filter:invert(0.9)_hue-rotate(180deg)_saturate(0.55)_brightness(0.95)] sm:h-[420px]"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+              <p className="text-sm text-mute">{contact.address}</p>
+              {contact.mapUrl && (
+                <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gold hover:text-ivory">
+                  {t.contact.openMap} ↗
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

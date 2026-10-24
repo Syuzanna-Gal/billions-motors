@@ -44,7 +44,11 @@ export default async function ContactSettingsPage() {
           {area("hours_en", "Opening hours — English")}
           {area("address_ru", "Address — Russian")}
           {area("hours_ru", "Opening hours — Russian")}
-          <div className="sm:col-span-2">{field("map_url", "Map link (Google or Yandex)", "Starts with https://", "url")}</div>
+          <div className="sm:col-span-2">
+            {field("map_location", "Map location (shows the map on the contact page)",
+              "In Google Maps right-click the showroom, click the coordinates to copy them (e.g. 40.2231, 44.5315) and paste here. A full Google Maps link with the pin also works.")}
+          </div>
+          <div className="sm:col-span-2">{field("map_url", "Map link for the address (optional)", "Starts with https://. Empty = Google Maps at the location above.", "url")}</div>
         </fieldset>
         <fieldset className="grid gap-4 rounded-[20px] border border-line bg-ink-2 p-5 sm:grid-cols-2 sm:p-6">
           <legend className="px-2 text-sm font-semibold text-gold-mid">Social</legend>

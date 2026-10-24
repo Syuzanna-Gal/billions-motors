@@ -14,7 +14,7 @@ import {
 import { cancelSale, recordSale, type SaleResult } from "@/lib/admin/sales";
 import { createUser, deleteUser, PASSWORD_MIN, setPassword, updateUser, validEmail } from "@/lib/admin/users";
 import { LEAD_STATUSES, setLeadStatus, type LeadStatus } from "@/lib/admin/leads";
-import { saveSettings, SETTING_KEYS, type Settings } from "@/lib/settings";
+import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/lib/settings";
 import { saveImage, UploadError } from "@/lib/media";
 
 /*
@@ -243,6 +243,9 @@ export async function saveSettingsAction(form: FormData) {
     if (values[k] && !/^https:\/\//.test(values[k]!)) back("/admin/contact", `${k} must start with https://`, "err");
   }
   if (values.email && !validEmail(values.email)) back("/admin/contact", "Email doesn't look right.", "err");
+  if (values.map_location && !parseMapLocation(values.map_location)) {
+    back("/admin/contact", "Couldn't find coordinates in the map location. In Google Maps right-click the showroom and click the numbers (e.g. 40.2231, 44.5315), then paste them here.", "err");
+  }
   await saveSettings(values);
   refreshSite();
   back("/admin/contact", "Contact info saved. It's live on the site.");
