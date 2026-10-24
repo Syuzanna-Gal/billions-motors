@@ -3,6 +3,7 @@ import type { Dictionary, Locale } from "@/i18n";
 import type { Contact } from "@/lib/settings";
 import { CloseMenuOnNavigate } from "./CloseMenuOnNavigate";
 import { LangSwitch } from "./LangSwitch";
+import { SearchBox } from "./SearchBox";
 import { Logo } from "./Logo";
 
 export function navItems(locale: Locale, t: Dictionary) {
@@ -35,7 +36,8 @@ export function Header({ locale, t, contact }: { locale: Locale; t: Dictionary; 
           </ul>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <SearchBox locale={locale} t={t.search} />
           <LangSwitch locale={locale} />
           <a href={contact.telHref} className="btn-gold hidden !min-h-11 !px-5 !text-sm sm:inline-flex">
             {t.nav.callUs}

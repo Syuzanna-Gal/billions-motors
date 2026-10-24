@@ -53,7 +53,8 @@ export interface Vehicle {
   createdAt: string;
 }
 
-export type SortKey = "newest" | "price_asc" | "price_desc";
+/** "relevance" only applies to searches (best match first). */
+export type SortKey = "relevance" | "newest" | "price_asc" | "price_desc";
 
 export interface VehicleFilters {
   brand?: string;
@@ -61,6 +62,8 @@ export interface VehicleFilters {
   fuel?: FuelType;
   status?: VehicleStatus;
   sort?: SortKey;
+  /** Free-text search by car name. */
+  q?: string;
 }
 
 export type ContactChannel = "WHATSAPP" | "PHONE" | "TELEGRAM" | "EMAIL";

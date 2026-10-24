@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config";
 import { getDb, type Db } from "./db";
+import { MAX_QUERY_LENGTH, MIN_QUERY_LENGTH, rankCars } from "./search";
 import type {
   BodyType, DriveType, FuelType, SortKey, Vehicle, VehicleColor, VehicleFilters, VehicleImage, VehicleStatus,
 } from "./types";
@@ -25,16 +26,17 @@ const SELECT_VEHICLE = `
   LEFT JOIN vehicle_translations t ON t.vehicle_id = v.id AND t.locale = $1`;
 
 const ORDER_BY: Record<SortKey, string> = {
+  // Outside a search there's nothing to rank by: same as newest. The default listing order.
+  relevance: "v.featured DESC, v.created_at DESC, v.id DESC",
   newest: "v.created_at DESC, v.id DESC",
   // Cars without a price ("contact for price") go last in both price orders.
   price_asc: "v.price_amd ASC NULLS LAST, v.created_at DESC",
   price_desc: "v.price_amd DESC NULLS LAST, v.created_at DESC",
 };
 
-export async function listVehicles(locale: Locale, filters: VehicleFilters = {}, limit = 200): Promise<Vehicle[]> {
-  const db = await getDb();
+/** WHERE conditions for the catalogue filters; appends their values to `params`. */
+function filterConditions(filters: VehicleFilters, params: unknown[]): string[] {
   const where = [VISIBLE];
-  const params: unknown[] = [locale];
   const add = (sql: string, value: unknown) => {
     params.push(value);
     where.push(sql.replace("?", `$${params.length}`));
@@ -43,6 +45,13 @@ export async function listVehicles(locale: Locale, filters: VehicleFilters = {},
   if (filters.body) add("v.body_type = ?", filters.body);
   if (filters.fuel) add("v.fuel_type = ?", filters.fuel);
   if (filters.status) add("v.status = ?", filters.status);
+  return where;
+}
+
+export async function listVehicles(locale: Locale, filters: VehicleFilters = {}, limit = 200): Promise<Vehicle[]> {
+  const db = await getDb();
+  const params: unknown[] = [locale];
+  const where = filterConditions(filters, params);
   params.push(limit);
 
   const rows = await db.query<VehicleRow & Record<string, unknown>>(
@@ -51,6 +60,65 @@ export async function listVehicles(locale: Locale, filters: VehicleFilters = {},
   );
   return hydrate(db, rows, locale);
 }
+
+export interface SearchResults {
+  /** Cars matching every word of the query. */
+  matches: Vehicle[];
+  /** Close but not exact (other models of the brand, bigger typos). */
+  similar: Vehicle[];
+  /** Number of matching cars, before the limit. */
+  total: number;
+}
+
+/**
+ * Search by name within the catalogue filters. Two light queries: the names of the visible
+ * cars (ranked in memory by lib/search), then full details for only the cars shown.
+ * Matches are best-first unless the visitor picked another sort.
+ */
+export async function searchVehicles(
+  locale: Locale,
+  filters: VehicleFilters,
+  { limit = 60, similarLimit = 6 }: { limit?: number; similarLimit?: number } = {},
+): Promise<SearchResults> {
+  const query = (filters.q ?? "").trim();
+  if (query.length < MIN_QUERY_LENGTH) return { matches: [], similar: [], total: 0 };
+
+  const db = await getDb();
+  const params: unknown[] = [];
+  const where = filterConditions(filters, params);
+  const names = await db.query<{ id: number; brand: string; model: string; trim_level: string | null; year: number }>(
+    `SELECT v.id, v.brand, v.model, v.trim_level, v.year FROM vehicles v
+     WHERE ${where.join(" AND ")} ORDER BY ${ORDER_BY.relevance}`,
+    params,
+  );
+  const ranked = rankCars(
+    query,
+    names.map((r) => ({ id: r.id, brand: r.brand, model: r.model, trim: r.trim_level, year: r.year })),
+    { limit, similarLimit },
+  );
+
+  const cars = await vehiclesByIds(db, locale, [...ranked.matches, ...ranked.similar]);
+  const pick = (ids: number[]) => ids.flatMap((id) => cars.get(id) ?? []);
+  const matches = pick(ranked.matches);
+  if (filters.sort && filters.sort !== "relevance") matches.sort(SORTERS[filters.sort]);
+  return { matches, similar: pick(ranked.similar), total: ranked.total };
+}
+
+/** Full details for the given cars, keyed by id (one query plus colours and photos). */
+async function vehiclesByIds(db: Db, locale: Locale, ids: number[]): Promise<Map<number, Vehicle>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.query<VehicleRow & Record<string, unknown>>(`${SELECT_VEHICLE} WHERE v.id = ANY($2::int[])`, [locale, ids]);
+  return new Map((await hydrate(db, rows, locale)).map((v) => [v.id, v]));
+}
+
+// In-memory equivalents of ORDER_BY, for sorting search matches. Cars without a price go last.
+const byPrice = (dir: 1 | -1) => (a: Vehicle, b: Vehicle) =>
+  a.priceAmd == null ? (b.priceAmd == null ? 0 : 1) : b.priceAmd == null ? -1 : dir * (a.priceAmd - b.priceAmd);
+const SORTERS: Record<Exclude<SortKey, "relevance">, (a: Vehicle, b: Vehicle) => number> = {
+  newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  price_asc: byPrice(1),
+  price_desc: byPrice(-1),
+};
 
 export async function getVehicle(slug: string, locale: Locale): Promise<Vehicle | null> {
   const db = await getDb();
@@ -176,7 +244,7 @@ async function hydrate(db: Db, rows: VehicleRow[], locale: Locale): Promise<Vehi
 const BODY: BodyType[] = ["SEDAN", "CROSSOVER", "SUV", "HATCHBACK", "MPV", "PICKUP"];
 const FUEL: FuelType[] = ["ELECTRIC", "EREV", "PHEV", "HYBRID", "PETROL"];
 const STATUS: VehicleStatus[] = ["IN_STOCK", "IN_TRANSIT", "PRE_ORDER"];
-const SORT: SortKey[] = ["newest", "price_asc", "price_desc"];
+const SORT: SortKey[] = ["relevance", "newest", "price_asc", "price_desc"];
 
 export const filterOptions = { body: BODY, fuel: FUEL, status: STATUS, sort: SORT };
 
@@ -195,5 +263,6 @@ export function parseFilters(params: Record<string, string | string[] | undefine
     fuel: pick(one("fuel"), FUEL),
     status: pick(one("status"), STATUS),
     sort: pick(one("sort"), SORT),
+    q: one("q")?.trim().slice(0, MAX_QUERY_LENGTH) || undefined,
   };
 }
