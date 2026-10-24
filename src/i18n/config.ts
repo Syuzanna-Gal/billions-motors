@@ -6,7 +6,7 @@ export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
-export const localeLabels: Record<Locale, string> = { hy: "ՀՅ", en: "EN", ru: "RU" };
+export const localeLabels: Record<Locale, string> = { hy: "ՀԱՅ", en: "EN", ru: "RU" };
 
 /** BCP-47 tags for number formatting and Open Graph. */
 export const localeTags: Record<Locale, { intl: string; og: string }> = {
