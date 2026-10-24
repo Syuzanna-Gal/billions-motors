@@ -80,8 +80,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </Link>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {collection.slice(0, 6).map((car, i) => (
-            <div key={car.id} className="flex" {...reveal(stagger(i))}>
+          {collection.slice(0, 8).map((car, i) => (
+            // 6 cars fill two rows of 3; the 7th and 8th appear only where rows hold 4.
+            <div key={car.id} className={i < 6 ? "flex" : "hidden 2xl:flex"} {...reveal(stagger(i))}>
               <CarCard car={car} locale={locale} t={t} />
             </div>
           ))}
