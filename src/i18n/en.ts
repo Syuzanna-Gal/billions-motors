@@ -58,6 +58,7 @@ export const en = {
     interior: "Interior",
     specs: "Specifications",
     similar: "You might also like",
+    about: "About this car",
     requestOffer: "Request an offer",
     callNow: "Call now",
     calcLoan: "Calculate loan",

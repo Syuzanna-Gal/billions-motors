@@ -8,9 +8,17 @@ const statusLabel: Record<string, string> = { IN_STOCK: "In stock", IN_TRANSIT: 
 
 /** Pick the car (and colour), press one button. Optional details are folded away. */
 export function SellForm({ cars }: { cars: SellableCar[] }) {
-  const [state, action, pending] = useActionState<SaleResult | undefined, FormData>(sellAction, undefined);
   const [carId, setCarId] = useState("");
   const [formKey, setFormKey] = useState(0);
+  const [state, action, pending] = useActionState<SaleResult | undefined, FormData>(async (prev, form) => {
+    const result = await sellAction(prev, form);
+    // After a sale start from an empty form, so a second click can't sell a different car by mistake.
+    if (result?.ok) {
+      setCarId("");
+      setFormKey((k) => k + 1);
+    }
+    return result;
+  }, undefined);
   const car = cars.find((c) => String(c.id) === carId);
   const soldOut = car?.stock === 0;
 

@@ -5,6 +5,7 @@ import { carName, getCarForEdit, listCarsAdmin } from "@/lib/admin/cars";
 import {
   addColorAction, deleteCarAction, deleteColorAction, deletePhotoAction, saveRelatedAction, updateColorAction, updatePhotoAction, uploadPhotosAction,
 } from "../../../actions";
+import { ConfirmSubmit } from "../../../_components/ConfirmSubmit";
 import { CarForm } from "../CarForm";
 
 export const metadata = { title: "Edit car" };
@@ -60,10 +61,11 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex gap-2">
                 <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">Save</button>
-                <button type="submit" formAction={deleteColorAction} className="rounded-full px-3 text-sm text-mute hover:text-[#f0a58f]"
-                  aria-label={`Delete colour ${c.name.en}`}>
+                <ConfirmSubmit formAction={deleteColorAction} className="rounded-full px-3 text-sm text-mute hover:text-[#f0a58f]"
+                  ariaLabel={`Delete colour ${c.name.en}`}
+                  message={`Delete the colour “${c.name.en}”? Its photos will be deleted too.`}>
                   Delete
-                </button>
+                </ConfirmSubmit>
               </div>
             </form>
           ))}
@@ -123,7 +125,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
                   </div>
                   <div className="flex items-end gap-2">
                     <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">Save</button>
-                    <button type="submit" formAction={deletePhotoAction} className="px-2 text-sm text-mute hover:text-[#f0a58f]">Delete</button>
+                    <ConfirmSubmit formAction={deletePhotoAction} className="px-2 text-sm text-mute hover:text-[#f0a58f]" message="Delete this photo?">Delete</ConfirmSubmit>
                   </div>
                 </form>
               </li>

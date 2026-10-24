@@ -60,6 +60,7 @@ export const hy: Dictionary = {
     interior: "Ներքին",
     specs: "Բնութագրեր",
     similar: "Ձեզ կարող է հետաքրքրել",
+    about: "Մեքենայի մասին",
     requestOffer: "Ստանալ առաջարկ",
     callNow: "Զանգահարել",
     calcLoan: "Հաշվել վարկը",

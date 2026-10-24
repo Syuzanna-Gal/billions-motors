@@ -60,6 +60,7 @@ export const ru: Dictionary = {
     interior: "Интерьер",
     specs: "Характеристики",
     similar: "Вам может понравиться",
+    about: "Об автомобиле",
     requestOffer: "Запросить предложение",
     callNow: "Позвонить",
     calcLoan: "Рассчитать кредит",

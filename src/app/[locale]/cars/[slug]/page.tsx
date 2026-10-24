@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = vehicleName(car);
   return {
     title: `${name} ${car.year}`,
-    description: `${name} ${car.year} · ${t.fuel[car.fuelType]} · ${car.horsepower} ${t.units.hp} · ${t.status[car.status]}`,
+    description: car.description?.slice(0, 160) || `${name} ${car.year} · ${t.fuel[car.fuelType]} · ${car.horsepower} ${t.units.hp} · ${t.status[car.status]}`,
     alternates: {
       canonical: `/${locale}/cars/${slug}`,
       languages: languageAlternates(`/cars/${slug}`),
@@ -64,6 +64,12 @@ export default async function CarPage({ params }: Props) {
             alt={name}
             labels={{ exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous, next: t.car.next, color: t.car.color }}
           />
+          {car.description && (
+            <div>
+              <h2 className="font-serif text-4xl font-medium">{t.car.about}</h2>
+              <p className="mt-5 max-w-3xl whitespace-pre-line text-lg leading-relaxed text-mute">{car.description}</p>
+            </div>
+          )}
           <Specs car={car} t={t} locale={locale} />
         </div>
 
