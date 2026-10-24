@@ -1,4 +1,5 @@
 import { migrations } from "./migrations";
+import { ensureDevTestUsers } from "./dev-users";
 import { seedDemoData } from "./seed";
 
 /*
@@ -28,10 +29,10 @@ declare global {
 }
 
 export function getDb(): Promise<Db> {
-  // In development .env.local is reloaded without a restart: switch databases when DATABASE_URL changes.
-  const url = process.env.DATABASE_URL ?? "";
+  // In development .env.local is reloaded without a restart: reconnect when DATABASE_URL (or DEV_TEST_PASSWORD) changes.
+  const url = `${process.env.DATABASE_URL ?? ""}|${process.env.DEV_TEST_PASSWORD ? "test-users" : ""}`;
   if (globalThis.__billionsDb && globalThis.__billionsDbUrl !== url) {
-    console.info("[db] DATABASE_URL changed, reconnecting");
+    console.info("[db] database settings changed, reconnecting");
     globalThis.__billionsDb = undefined;
   }
   globalThis.__billionsDbUrl = url;
@@ -59,6 +60,7 @@ async function connect(): Promise<Db> {
   if (process.env.SEED_DEMO === "true" || (process.env.NODE_ENV !== "production" && process.env.SEED_DEMO !== "false")) {
     await seedDemoData(db);
   }
+  await ensureDevTestUsers(db);
   return db;
 }
 
