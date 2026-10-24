@@ -56,6 +56,8 @@ export const ru: Dictionary = {
     years: "г.",
     photo: "Фото автомобиля",
     color: "Цвет",
+    interiorColor: "Салон",
+    view360: "Салон 360°",
     exterior: "Экстерьер",
     interior: "Интерьер",
     specs: "Характеристики",
@@ -89,7 +91,7 @@ export const ru: Dictionary = {
   units: { hp: "л.с.", km: "км", mm: "мм", sec: "с", kmh: "км/ч", kwh: "кВт·ч", pcs: "шт.", pc: "шт." },
   status: { IN_STOCK: "В наличии", IN_TRANSIT: "В пути", PRE_ORDER: "Предзаказ" },
   fuel: { ELECTRIC: "Электро", EREV: "Гибрид с увеличителем запаса хода", PHEV: "Подключаемый гибрид", HYBRID: "Гибрид", PETROL: "Бензин" },
-  body: { SEDAN: "Седан", CROSSOVER: "Кроссовер", SUV: "Внедорожник", HATCHBACK: "Хэтчбек", MPV: "Минивэн", PICKUP: "Пикап" },
+  body: { SEDAN: "Седан", CROSSOVER: "Кроссовер", SUV: "Внедорожник", HATCHBACK: "Хэтчбек", WAGON: "Универсал", MPV: "Минивэн", PICKUP: "Пикап" },
   drive: { FWD: "Передний", RWD: "Задний", AWD: "Полный" },
   search: {
     open: "Поиск автомобилей",
@@ -107,6 +109,9 @@ export const ru: Dictionary = {
     sortRelevance: "По релевантности",
   },
   catalog: {
+    pages: "Страницы",
+    prev: "Предыдущая страница",
+    next: "Следующая страница",
     title: "Найдите свой автомобиль",
     lead: "Автомобили в наличии, в пути и под заказ.",
     showing: "Найдено автомобилей: {count}",

@@ -33,12 +33,17 @@ export interface CarFields {
   stock: number | null;
   featured: boolean;
   published: boolean;
+  interior_360_url: string | null;
+  video_url: string | null;
   transmission: L10n;
   description: L10n;
 }
 
+export type ColorKind = "EXTERIOR" | "INTERIOR";
+
 export interface AdminColor {
   id: number;
+  kind: ColorKind;
   hex: string;
   position: number;
   name: L10n;
@@ -50,6 +55,7 @@ export interface AdminImage {
   kind: "EXTERIOR" | "INTERIOR";
   color_id: number | null;
   position: number;
+  is_cover: boolean;
 }
 
 export interface CarForEdit extends CarFields {
@@ -97,8 +103,8 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
       "SELECT locale, transmission, description FROM vehicle_translations WHERE vehicle_id = $1",
       [id],
     ),
-    db.query<{ id: number; hex: string; position: number }>(
-      "SELECT id, hex, position FROM vehicle_colors WHERE vehicle_id = $1 ORDER BY position, id",
+    db.query<{ id: number; kind: ColorKind; hex: string; position: number }>(
+      "SELECT id, kind, hex, position FROM vehicle_colors WHERE vehicle_id = $1 ORDER BY (kind = 'INTERIOR'), position, id",
       [id],
     ),
     db.query<{ color_id: number; locale: Locale; name: string }>(
@@ -107,7 +113,7 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
       [id],
     ),
     db.query<AdminImage>(
-      "SELECT id, url, kind, color_id, position FROM vehicle_images WHERE vehicle_id = $1 ORDER BY color_id NULLS FIRST, position, id",
+      "SELECT id, url, kind, color_id, position, is_cover FROM vehicle_images WHERE vehicle_id = $1 ORDER BY is_cover DESC, color_id NULLS FIRST, position, id",
       [id],
     ),
     db.query<{ related_id: number }>("SELECT related_id FROM vehicle_related WHERE vehicle_id = $1 ORDER BY position", [id]),
@@ -161,6 +167,12 @@ export function parseCarForm(form: FormData): { data: CarFields; errors: FieldEr
   const l10n = (prefix: string, max: number): L10n =>
     Object.fromEntries(locales.map((l) => [l, text(`${prefix}_${l}`, max)])) as L10n;
 
+  const httpsUrl = (k: string) => {
+    const v = text(k, 500);
+    if (v && !/^https:\/\/\S+$/.test(v)) errors[k] = "Must start with https://";
+    return v || null;
+  };
+
   const brand = text("brand", 60);
   const model = text("model", 80);
   if (!brand) errors.brand = "Required";
@@ -192,6 +204,8 @@ export function parseCarForm(form: FormData): { data: CarFields; errors: FieldEr
     stock: stockMode === "untracked" ? null : (num("stock", { required: true, int: true, min: 0, max: 999 }) ?? 0),
     featured: form.get("featured") === "on",
     published: form.get("published") === "on",
+    interior_360_url: httpsUrl("interior_360_url"),
+    video_url: httpsUrl("video_url"),
     transmission: l10n("transmission", 80),
     description: l10n("description", 4000),
   };
@@ -223,7 +237,7 @@ async function uniqueSlug(base: string, excludeId?: number): Promise<string> {
 const COLUMNS = [
   "slug", "brand", "model", "trim_level", "year", "status", "fuel_type", "body_type", "drive", "horsepower",
   "ev_range_km", "battery_kwh", "accel_0_100", "top_speed_kmh", "seats", "length_mm", "width_mm", "height_mm",
-  "warranty_years", "warranty_km", "price_amd", "stock", "featured", "published",
+  "warranty_years", "warranty_km", "price_amd", "stock", "featured", "published", "interior_360_url", "video_url",
 ] as const;
 
 export async function saveCar(data: CarFields, id?: number): Promise<number> {
@@ -262,13 +276,13 @@ export async function deleteCar(id: number) {
   await Promise.all(images.map((i) => deleteImageFile(i.url)));
 }
 
-export async function addColor(vehicleId: number, hex: string, name: L10n) {
+export async function addColor(vehicleId: number, kind: ColorKind, hex: string, name: L10n) {
   const db = await getDb();
   await db.transaction(async (tx) => {
     const [{ id }] = await tx.query<{ id: number }>(
-      `INSERT INTO vehicle_colors (vehicle_id, hex, position)
-       VALUES ($1, $2, (SELECT coalesce(max(position) + 1, 0) FROM vehicle_colors WHERE vehicle_id = $1)) RETURNING id`,
-      [vehicleId, hex],
+      `INSERT INTO vehicle_colors (vehicle_id, kind, hex, position)
+       VALUES ($1, $2, $3, (SELECT coalesce(max(position) + 1, 0) FROM vehicle_colors WHERE vehicle_id = $1 AND kind = $2)) RETURNING id`,
+      [vehicleId, kind, hex],
     );
     for (const l of locales) {
       await tx.query("INSERT INTO vehicle_color_translations (color_id, locale, name) VALUES ($1, $2, $3)", [id, l, name[l] || name.en || hex]);
@@ -276,12 +290,13 @@ export async function addColor(vehicleId: number, hex: string, name: L10n) {
   });
 }
 
-export async function updateColor(vehicleId: number, colorId: number, hex: string, name: L10n, position: number) {
+export async function updateColor(vehicleId: number, colorId: number, kind: ColorKind, hex: string, name: L10n, position: number) {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    const rows = await tx.query("UPDATE vehicle_colors SET hex = $1, position = $2 WHERE id = $3 AND vehicle_id = $4 RETURNING id", [
-      hex, position, colorId, vehicleId,
-    ]);
+    const rows = await tx.query(
+      "UPDATE vehicle_colors SET kind = $1, hex = $2, position = $3 WHERE id = $4 AND vehicle_id = $5 RETURNING id",
+      [kind, hex, position, colorId, vehicleId],
+    );
     if (rows.length === 0) return;
     for (const l of locales) {
       await tx.query(
@@ -320,6 +335,17 @@ export async function updateImage(vehicleId: number, imageId: number, colorId: n
   await db.query("UPDATE vehicle_images SET color_id = $1, kind = $2, position = $3 WHERE id = $4 AND vehicle_id = $5", [
     colorId, kind, position, imageId, vehicleId,
   ]);
+}
+
+/** Makes this photo the one shown on catalogue cards (one cover per car). */
+export async function setCover(vehicleId: number, imageId: number) {
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    const [img] = await tx.query("SELECT 1 FROM vehicle_images WHERE id = $1 AND vehicle_id = $2", [imageId, vehicleId]);
+    if (!img) return;
+    await tx.query("UPDATE vehicle_images SET is_cover = false WHERE vehicle_id = $1 AND is_cover", [vehicleId]);
+    await tx.query("UPDATE vehicle_images SET is_cover = true WHERE id = $1", [imageId]);
+  });
 }
 
 export async function deleteImage(vehicleId: number, imageId: number) {

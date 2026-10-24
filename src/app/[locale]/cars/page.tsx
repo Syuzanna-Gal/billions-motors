@@ -32,19 +32,24 @@ export default async function CatalogPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
-  const filters = parseFilters(await searchParams);
+  const rawParams = await searchParams;
+  const filters = parseFilters(rawParams);
   const { q } = filters;
+  const page = parsePage(rawParams.page);
   // "Best match" is offered, and is the default, only while searching.
   const sorts = filterOptions.sort.filter((s) => q || s !== "relevance");
   const sort = filters.sort && sorts.includes(filters.sort) ? filters.sort : q ? "relevance" : "newest";
 
+  const range = { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
   const [results, brands] = await Promise.all([
     q
-      ? searchVehicles(locale, { ...filters, sort })
-      : listVehicles(locale, { ...filters, sort }).then((cars) => ({ matches: cars, similar: [], total: cars.length })),
+      ? searchVehicles(locale, { ...filters, sort }, range)
+      : listVehicles(locale, { ...filters, sort }, range).then(({ cars, total }) => ({ matches: cars, similar: [], total })),
     getBrands(),
   ]);
   const cars = results.matches;
+  const pages = Math.max(1, Math.ceil(results.total / PAGE_SIZE));
+  if (page > pages) notFound();
 
   const sortLabels = {
     relevance: t.search.sortRelevance,
@@ -53,8 +58,20 @@ export default async function CatalogPage({ params, searchParams }: Props) {
     price_desc: t.catalog.sortPriceDesc,
   };
 
-  let summary = interpolate(t.catalog.showing, { count: cars.length });
-  if (q) summary = cars.length ? interpolate(t.search.resultsFor, { q }) + ` · ${cars.length}` : results.similar.length ? interpolate(t.search.noExact, { q }) : interpolate(t.search.nothing, { q });
+  let summary = interpolate(t.catalog.showing, { count: results.total });
+  if (q) {
+    summary = results.total
+      ? `${interpolate(t.search.resultsFor, { q })} · ${results.total}`
+      : results.similar.length ? interpolate(t.search.noExact, { q }) : interpolate(t.search.nothing, { q });
+  }
+  // Links keep the current filters and change only the page.
+  const pageHref = (n: number) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(rawParams)) if (typeof v === "string" && v && k !== "page") qs.set(k, v);
+    if (n > 1) qs.set("page", String(n));
+    const s = qs.toString();
+    return `/${locale}/cars${s ? `?${s}` : ""}`;
+  };
 
   return (
     <>
@@ -92,6 +109,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         <p className="mt-8 text-sm text-mute" aria-live="polite">{summary}</p>
 
         {cars.length > 0 && <CarGrid cars={cars} locale={locale} t={t} />}
+        {pages > 1 && <Pagination page={page} pages={pages} href={pageHref} t={t.catalog} />}
         {cars.length === 0 && results.similar.length === 0 && (
           <p className="mt-5 rounded-[var(--radius-card)] border border-line bg-ink-2 p-10 text-center text-mute">
             {q ? interpolate(t.search.nothing, { q }) : t.catalog.empty}
@@ -106,6 +124,34 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         )}
       </section>
     </>
+  );
+}
+
+const PAGE_SIZE = 24;
+
+function parsePage(value: string | string[] | undefined): number {
+  const n = typeof value === "string" ? Number(value) : 1;
+  return Number.isInteger(n) && n >= 1 && n <= 10_000 ? n : 1;
+}
+
+/** Page links: first, last, and two either side of the current page, with gaps as "…". */
+function Pagination({ page, pages, href, t }: { page: number; pages: number; href: (n: number) => string; t: Dictionary["catalog"] }) {
+  const shown = [...new Set([1, page - 2, page - 1, page, page + 1, page + 2, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const link = "flex size-11 items-center justify-center rounded-full border text-sm transition-colors";
+  return (
+    <nav aria-label={t.pages} className="mt-10 flex flex-wrap items-center justify-center gap-2">
+      {page > 1 && <Link href={href(page - 1)} rel="prev" aria-label={t.prev} className={`${link} border-line text-mute hover:text-ivory`}>←</Link>}
+      {shown.map((n, i) => (
+        <span key={n} className="contents">
+          {i > 0 && n - shown[i - 1] > 1 && <span className="px-1 text-mute-2" aria-hidden="true">…</span>}
+          <Link href={href(n)} aria-current={n === page ? "page" : undefined}
+            className={`${link} ${n === page ? "border-gold bg-gold/10 text-gold" : "border-line text-mute hover:text-ivory"}`}>
+            {n}
+          </Link>
+        </span>
+      ))}
+      {page < pages && <Link href={href(page + 1)} rel="next" aria-label={t.next} className={`${link} border-line text-mute hover:text-ivory`}>→</Link>}
+    </nav>
   );
 }
 

@@ -56,6 +56,8 @@ export const hy: Dictionary = {
     years: "տարի",
     photo: "Մեքենայի լուսանկար",
     color: "Գույն",
+    interiorColor: "Սրահ",
+    view360: "Սրահ 360°",
     exterior: "Արտաքին",
     interior: "Ներքին",
     specs: "Բնութագրեր",
@@ -89,7 +91,7 @@ export const hy: Dictionary = {
   units: { hp: "ձ.ու.", km: "կմ", mm: "մմ", sec: "վ", kmh: "կմ/ժ", kwh: "կՎտ·ժ", pcs: "հատ", pc: "հատ" },
   status: { IN_STOCK: "Առկա է", IN_TRANSIT: "Ճանապարհին", PRE_ORDER: "Նախնական պատվեր" },
   fuel: { ELECTRIC: "Էլեկտրական", EREV: "Հիբրիդ (վազքի ընդլայնիչով)", PHEV: "Plug-in հիբրիդ", HYBRID: "Հիբրիդ", PETROL: "Բենզին" },
-  body: { SEDAN: "Սեդան", CROSSOVER: "Քրոսովեր", SUV: "Ամենագնաց", HATCHBACK: "Հեչբեք", MPV: "Մինիվեն", PICKUP: "Պիկապ" },
+  body: { SEDAN: "Սեդան", CROSSOVER: "Քրոսովեր", SUV: "Ամենագնաց", HATCHBACK: "Հեչբեք", WAGON: "Ունիվերսալ", MPV: "Մինիվեն", PICKUP: "Պիկապ" },
   drive: { FWD: "Առջևի", RWD: "Հետևի", AWD: "Լիաքարշակ" },
   search: {
     open: "Որոնել մեքենաներ",
@@ -107,6 +109,9 @@ export const hy: Dictionary = {
     sortRelevance: "Ըստ համապատասխանության",
   },
   catalog: {
+    pages: "Էջեր",
+    prev: "Նախորդ էջ",
+    next: "Հաջորդ էջ",
     title: "Գտեք ձեր հաջորդ մեքենան",
     lead: "Առկա, ճանապարհին գտնվող և պատվիրվող մեքենաներ։",
     showing: "Ցուցադրվում է {count} մեքենա",

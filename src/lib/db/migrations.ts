@@ -166,4 +166,33 @@ export const migrations: { id: string; sql: string }[] = [
       );
     `,
   },
+  {
+    id: "003_real_catalogue",
+    sql: /* sql */ `
+      -- Estate cars.
+      ALTER TABLE vehicles DROP CONSTRAINT vehicles_body_type_check;
+      ALTER TABLE vehicles ADD CONSTRAINT vehicles_body_type_check
+        CHECK (body_type IN ('SEDAN', 'CROSSOVER', 'SUV', 'HATCHBACK', 'WAGON', 'MPV', 'PICKUP'));
+
+      -- Optional links shown on the car page.
+      ALTER TABLE vehicles ADD COLUMN interior_360_url text CHECK (interior_360_url IS NULL OR interior_360_url ~ '^https://');
+      ALTER TABLE vehicles ADD COLUMN video_url text CHECK (video_url IS NULL OR video_url ~ '^https://');
+
+      -- Where an imported car or photo came from, so an import can be re-run without duplicates.
+      -- NULL for cars added in the admin.
+      ALTER TABLE vehicles ADD COLUMN source text;
+      ALTER TABLE vehicles ADD COLUMN source_id text;
+      CREATE UNIQUE INDEX vehicles_source_idx ON vehicles (source, source_id) WHERE source IS NOT NULL;
+      ALTER TABLE vehicle_images ADD COLUMN source_id text;
+
+      -- A colour is either paint (exterior) or an interior trim; each has its own picker.
+      ALTER TABLE vehicle_colors ADD COLUMN kind text NOT NULL DEFAULT 'EXTERIOR' CHECK (kind IN ('EXTERIOR', 'INTERIOR'));
+      DROP INDEX vehicle_colors_vehicle_idx;
+      CREATE INDEX vehicle_colors_vehicle_idx ON vehicle_colors (vehicle_id, kind, position);
+
+      -- The photo used on catalogue cards. At most one per car.
+      ALTER TABLE vehicle_images ADD COLUMN is_cover boolean NOT NULL DEFAULT false;
+      CREATE UNIQUE INDEX vehicle_images_one_cover_idx ON vehicle_images (vehicle_id) WHERE is_cover;
+    `,
+  },
 ];

@@ -1,6 +1,6 @@
 export type VehicleStatus = "IN_STOCK" | "IN_TRANSIT" | "PRE_ORDER";
 export type FuelType = "ELECTRIC" | "EREV" | "PHEV" | "HYBRID" | "PETROL";
-export type BodyType = "SEDAN" | "CROSSOVER" | "SUV" | "HATCHBACK" | "MPV" | "PICKUP";
+export type BodyType = "SEDAN" | "CROSSOVER" | "SUV" | "HATCHBACK" | "WAGON" | "MPV" | "PICKUP";
 export type DriveType = "FWD" | "RWD" | "AWD";
 
 export interface VehicleImage {
@@ -9,9 +9,13 @@ export interface VehicleImage {
   alt?: string;
 }
 
-/** One paint option. Photos are per colour; an empty list falls back to the car's main photos. */
+/**
+ * A paint colour (EXTERIOR) or an interior trim (INTERIOR), each with its own picker.
+ * Photos are per colour; an empty list falls back to the car's general photos.
+ */
 export interface VehicleColor {
   id: number;
+  kind: "EXTERIOR" | "INTERIOR";
   /** In the requested language. */
   name: string;
   hex: string;
@@ -48,8 +52,14 @@ export interface Vehicle {
   /** Cars left; null = not counted (pre-order / in transit). */
   stock: number | null;
   featured: boolean;
+  /** Photo for catalogue cards: the chosen cover, else the first exterior photo. */
+  cover: VehicleImage | null;
+  /** General photos (not tied to a colour). */
   images: VehicleImage[];
+  /** Paint colours, then interior trims (see `kind`). */
   colors: VehicleColor[];
+  interior360Url: string | null;
+  videoUrl: string | null;
   createdAt: string;
 }
 

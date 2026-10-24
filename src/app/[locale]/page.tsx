@@ -17,7 +17,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
 
-  const [[hero], collection, contact] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, 8), getContact(locale)]);
+  const [[hero], collection, contact] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, { limit: 8, offset: 0 }).then((r) => r.cars), getContact(locale)]);
 
   return (
     <>
@@ -51,7 +51,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             className="float-y sheen group relative block h-[340px] overflow-hidden rounded-[28px] border border-line sm:h-[440px]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_70%_20%,#2a2620_0%,#141416_55%,#0e0e10_100%)]">
-              <CarPhoto image={hero.images[0]} alt={vehicleName(hero)} placeholder={t.car.photo} priority className="!bg-none" />
+              <CarPhoto image={hero.cover ?? undefined} alt={vehicleName(hero)} placeholder={t.car.photo} priority className="!bg-none" />
             </div>
             <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 bg-gradient-to-t from-ink/90 to-transparent p-7">
               <div>

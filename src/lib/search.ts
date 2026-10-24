@@ -86,6 +86,16 @@ const BRAND_ALIASES: Record<string, string[]> = {
   leapmotor: ["lipmotor"],
   tank: ["tanq"],
   aito: ["ayto"],
+  "lynk co": ["link", "linkko", "link and co", "lynk"],
+  xiaomi: ["syaomi", "ksiaomi", "shaomi", "sjaomi"],
+  "mercedes benz": ["mersedes", "merc", "benz"],
+  volkswagen: ["folksvagen", "vw", "volksvagen"],
+  denza: ["dentsa"],
+  yangwang: ["yanvan", "yangvang"],
+  leopard: ["fangchengbao", "leopard"],
+  dongfeng: ["dunfen", "dongfen"],
+  arcfox: ["arkfoks"],
+  polestar: ["polstar"],
 };
 
 /* ------------------------------------------------------------------ string distance */

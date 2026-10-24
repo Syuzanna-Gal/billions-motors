@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical: `/${locale}/cars/${slug}`,
       languages: languageAlternates(`/cars/${slug}`),
     },
-    openGraph: car.images[0] ? { images: [car.images[0].url] } : undefined,
+    openGraph: car.cover ? { images: [car.cover.url] } : undefined,
   };
 }
 
@@ -62,7 +62,11 @@ export default async function CarPage({ params }: Props) {
             images={car.images}
             colors={car.colors}
             alt={name}
-            labels={{ exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous, next: t.car.next, color: t.car.color }}
+            labels={{
+              exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous,
+              next: t.car.next, color: t.car.color, interiorColor: t.car.interiorColor, view360: t.car.view360,
+            }}
+            interior360Url={car.interior360Url}
           />
           {car.description && (
             <div>

@@ -54,6 +54,8 @@ export const en = {
     years: "yrs",
     photo: "Car photo",
     color: "Colour",
+    interiorColor: "Interior",
+    view360: "360° interior",
     exterior: "Exterior",
     interior: "Interior",
     specs: "Specifications",
@@ -87,7 +89,7 @@ export const en = {
   units: { hp: "hp", km: "km", mm: "mm", sec: "s", kmh: "km/h", kwh: "kWh", pcs: "pcs", pc: "pc" },
   status: { IN_STOCK: "In stock", IN_TRANSIT: "In transit", PRE_ORDER: "Pre-order" },
   fuel: { ELECTRIC: "Electric", EREV: "Range-extended hybrid", PHEV: "Plug-in hybrid", HYBRID: "Hybrid", PETROL: "Petrol" },
-  body: { SEDAN: "Sedan", CROSSOVER: "Crossover", SUV: "SUV", HATCHBACK: "Hatchback", MPV: "Minivan", PICKUP: "Pickup" },
+  body: { SEDAN: "Sedan", CROSSOVER: "Crossover", SUV: "SUV", HATCHBACK: "Hatchback", WAGON: "Estate", MPV: "Minivan", PICKUP: "Pickup" },
   drive: { FWD: "Front-wheel", RWD: "Rear-wheel", AWD: "All-wheel" },
   search: {
     open: "Search cars",
@@ -105,6 +107,9 @@ export const en = {
     sortRelevance: "Best match",
   },
   catalog: {
+    pages: "Pages",
+    prev: "Previous page",
+    next: "Next page",
     title: "Find your next car",
     lead: "Cars in stock, in transit and available to order.",
     showing: "Showing {count} cars",

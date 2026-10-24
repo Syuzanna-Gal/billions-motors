@@ -6,7 +6,7 @@ import { saveCarAction, type FormState } from "../../actions";
 
 const STATUS = [["IN_STOCK", "In stock"], ["IN_TRANSIT", "In transit"], ["PRE_ORDER", "Pre-order"]] as const;
 const FUEL = [["ELECTRIC", "Electric"], ["EREV", "Range-extended hybrid"], ["PHEV", "Plug-in hybrid"], ["HYBRID", "Hybrid"], ["PETROL", "Petrol"]] as const;
-const BODY = [["SEDAN", "Sedan"], ["CROSSOVER", "Crossover"], ["SUV", "SUV"], ["HATCHBACK", "Hatchback"], ["MPV", "Minivan"], ["PICKUP", "Pickup"]] as const;
+const BODY = [["SEDAN", "Sedan"], ["CROSSOVER", "Crossover"], ["SUV", "SUV"], ["HATCHBACK", "Hatchback"], ["WAGON", "Estate (wagon)"], ["MPV", "Minivan"], ["PICKUP", "Pickup"]] as const;
 const DRIVE = [["FWD", "Front-wheel"], ["RWD", "Rear-wheel"], ["AWD", "All-wheel"]] as const;
 const LANGS = [["hy", "Armenian"], ["en", "English"], ["ru", "Russian"]] as const;
 
@@ -91,6 +91,11 @@ export function CarForm({ car }: { car?: Initial }) {
             </div>
           </div>
         ))}
+      </Section>
+
+      <Section title="Links (optional)">
+        <Field {...f} name="interior_360_url" label="360° interior view" type="url" wide hint="Shows a “360° interior” button on the car page." />
+        <Field {...f} name="video_url" label="Video (YouTube)" type="url" wide />
       </Section>
 
       <Section title="Web address">

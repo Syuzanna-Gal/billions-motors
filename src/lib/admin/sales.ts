@@ -19,8 +19,11 @@ export async function listSellableCars(): Promise<SellableCar[]> {
      WHERE published ORDER BY brand, model, year DESC, id`,
   );
   const colors = await db.query<{ id: number; vehicle_id: number; hex: string; name: string | null }>(
+    // Paint colours only: that's what a salesperson picks (interior trims aren't asked for).
     `SELECT c.id, c.vehicle_id, c.hex, ct.name FROM vehicle_colors c
+     JOIN vehicles v ON v.id = c.vehicle_id AND v.published
      LEFT JOIN vehicle_color_translations ct ON ct.color_id = c.id AND ct.locale = 'en'
+     WHERE c.kind = 'EXTERIOR'
      ORDER BY c.position, c.id`,
   );
   return cars.map((c) => ({

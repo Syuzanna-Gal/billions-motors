@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       name: vehicleName(car),
       meta: `${car.year} · ${t.fuel[car.fuelType]}`,
       price: car.priceAmd ? formatAmd(car.priceAmd, locale) : t.car.contactForPrice,
-      image: car.images[0]?.url ?? null,
+      image: car.cover?.url ?? null,
       similar: isSimilar,
     })),
   });

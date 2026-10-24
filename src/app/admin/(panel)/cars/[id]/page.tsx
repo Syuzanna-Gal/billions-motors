@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { carName, getCarForEdit, listCarsAdmin } from "@/lib/admin/cars";
 import {
-  addColorAction, deleteCarAction, deleteColorAction, deletePhotoAction, saveRelatedAction, updateColorAction, updatePhotoAction, uploadPhotosAction,
+  addColorAction, deleteCarAction, deleteColorAction, deletePhotoAction, saveRelatedAction, setCoverAction, updateColorAction,
+  updatePhotoAction, uploadPhotosAction,
 } from "../../../actions";
 import { ConfirmSubmit } from "../../../_components/ConfirmSubmit";
 import { CarForm } from "../CarForm";
@@ -39,16 +40,20 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
       {/* ---------- Colours ---------- */}
       <section id="colors" className="scroll-mt-6">
         <h2 className="text-xl font-semibold">Colours</h2>
-        <p className="mt-1 text-sm text-mute">The colour picker on the car page. Lower “order” numbers show first.</p>
+        <p className="mt-1 text-sm text-mute">
+          Two pickers on the car page: <b>Paint</b> (exterior photos) and <b>Interior</b> trims (interior photos).
+          Lower “order” numbers show first. Salespeople choose from paint colours.
+        </p>
         <div className="mt-4 flex flex-col gap-3">
           {car.colors.map((c) => (
-            <form key={c.id} action={updateColorAction} className="grid items-end gap-3 rounded-2xl border border-line bg-ink-2 p-4 sm:grid-cols-[auto_repeat(3,minmax(0,1fr))_5rem_auto]">
+            <form key={`${c.id}-${c.kind}`} action={updateColorAction} className="grid items-end gap-3 rounded-2xl border border-line bg-ink-2 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_5rem_auto]">
               <input type="hidden" name="vehicle_id" value={car.id} />
               <input type="hidden" name="color_id" value={c.id} />
               <div>
                 <label className="label" htmlFor={`hex-${c.id}`}>Colour</label>
                 <input id={`hex-${c.id}`} name="hex" type="color" defaultValue={c.hex} className="h-12 w-16 cursor-pointer rounded-xl border border-line bg-ink" />
               </div>
+              <ColorKindSelect id={`ck-${c.id}`} value={c.kind} />
               {LANGS.map(([l, name]) => (
                 <div key={l}>
                   <label className="label" htmlFor={`name-${c.id}-${l}`}>{name}</label>
@@ -69,12 +74,13 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
               </div>
             </form>
           ))}
-          <form action={addColorAction} className="grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[auto_repeat(3,minmax(0,1fr))_auto]">
+          <form action={addColorAction} className="grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_auto]">
             <input type="hidden" name="vehicle_id" value={car.id} />
             <div>
               <label className="label" htmlFor="new-hex">Colour</label>
               <input id="new-hex" name="hex" type="color" defaultValue="#ecebe6" className="h-12 w-16 cursor-pointer rounded-xl border border-line bg-ink" />
             </div>
+            <ColorKindSelect id="new-kind" />
             {LANGS.map(([l, name]) => (
               <div key={l}>
                 <label className="label" htmlFor={`new-name-${l}`}>{name}{l === "en" && " *"}</label>
@@ -91,7 +97,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
         <h2 className="text-xl font-semibold">Photos</h2>
         <p className="mt-1 text-sm text-mute">
           Link a photo to a colour to show it when that colour is picked. “All colours” photos are used when a colour has none.
-          The first exterior photo is the card picture.
+          The <b>cover</b> is the picture on catalogue cards ({car.images.length} photos).
         </p>
         <form action={uploadPhotosAction}
           className="mt-4 grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
@@ -111,9 +117,18 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
         ) : (
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {car.images.map((img) => (
-              <li key={img.id} className="overflow-hidden rounded-2xl border border-line bg-ink-2">
+              <li key={img.id} className={`relative overflow-hidden rounded-2xl border bg-ink-2 ${img.is_cover ? "border-gold" : "border-line"}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt="" className="aspect-[16/10] w-full object-cover" />
+                <img src={img.url} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+                {img.is_cover ? (
+                  <span className="absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-ink">Cover</span>
+                ) : (
+                  <form action={setCoverAction} className="absolute left-3 top-3">
+                    <input type="hidden" name="vehicle_id" value={car.id} />
+                    <input type="hidden" name="image_id" value={img.id} />
+                    <button type="submit" className="rounded-full bg-ink/80 px-3 py-1 text-xs text-ivory backdrop-blur hover:text-gold">Make cover</button>
+                  </form>
+                )}
                 <form key={`${img.color_id}-${img.kind}`} action={updatePhotoAction} className="grid grid-cols-2 gap-2 p-3">
                   <input type="hidden" name="vehicle_id" value={car.id} />
                   <input type="hidden" name="image_id" value={img.id} />
@@ -179,13 +194,34 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
   );
 }
 
-function ColorSelect({ colors, id, value }: { colors: { id: number; name: { en: string } }[]; id: string; value?: number | null }) {
+function ColorSelect({ colors, id, value }: { colors: { id: number; kind: string; name: { en: string } }[]; id: string; value?: number | null }) {
+  const group = (kind: string, label: string) => {
+    const list = colors.filter((c) => c.kind === kind);
+    return list.length > 0 && (
+      <optgroup label={label}>
+        {list.map((c) => <option key={c.id} value={c.id}>{c.name.en}</option>)}
+      </optgroup>
+    );
+  };
   return (
     <div>
       <label className="label" htmlFor={id}>Colour</label>
       <select id={id} name="color_id" defaultValue={value ?? ""} className="field">
         <option value="">All colours</option>
-        {colors.map((c) => <option key={c.id} value={c.id}>{c.name.en}</option>)}
+        {group("EXTERIOR", "Paint")}
+        {group("INTERIOR", "Interior")}
+      </select>
+    </div>
+  );
+}
+
+function ColorKindSelect({ id, value }: { id: string; value?: string }) {
+  return (
+    <div>
+      <label className="label" htmlFor={id}>Type</label>
+      <select id={id} name="kind" defaultValue={value ?? "EXTERIOR"} className="field">
+        <option value="EXTERIOR">Paint</option>
+        <option value="INTERIOR">Interior</option>
       </select>
     </div>
   );

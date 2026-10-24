@@ -8,7 +8,7 @@ import {
 import { getDb } from "@/lib/db";
 import { locales } from "@/i18n/config";
 import {
-  addColor, addImages, deleteCar, deleteColor, deleteImage, getCarForEdit, parseCarForm, saveCar, setRelated, updateColor, updateImage,
+  addColor, addImages, deleteCar, deleteColor, deleteImage, getCarForEdit, parseCarForm, saveCar, setCover, setRelated, updateColor, updateImage,
   type FieldErrors, type L10n,
 } from "@/lib/admin/cars";
 import { cancelSale, recordSale, type SaleResult } from "@/lib/admin/sales";
@@ -156,6 +156,7 @@ export async function setStockAction(form: FormData) {
 
 const colorNames = (form: FormData): L10n => Object.fromEntries(locales.map((l) => [l, str(form, `name_${l}`, 60)])) as L10n;
 const validHex = (h: string) => /^#[0-9a-f]{6}$/i.test(h);
+const colorKind = (form: FormData) => (str(form, "kind") === "INTERIOR" ? "INTERIOR" : "EXTERIOR");
 
 export async function addColorAction(form: FormData) {
   await requireUser("FULL");
@@ -163,7 +164,7 @@ export async function addColorAction(form: FormData) {
   const hex = str(form, "hex");
   const names = colorNames(form);
   if (!validHex(hex) || !names.en) back(`/admin/cars/${id}#colors`, "Colour needs a code and an English name.", "err");
-  await addColor(id, hex, names);
+  await addColor(id, colorKind(form), hex, names);
   refreshSite();
   back(`/admin/cars/${id}#colors`, "Colour added.");
 }
@@ -173,7 +174,7 @@ export async function updateColorAction(form: FormData) {
   const id = int(form, "vehicle_id");
   const hex = str(form, "hex");
   if (!validHex(hex)) back(`/admin/cars/${id}#colors`, "Invalid colour code.", "err");
-  await updateColor(id, int(form, "color_id"), hex, colorNames(form), int(form, "position") || 0);
+  await updateColor(id, int(form, "color_id"), colorKind(form), hex, colorNames(form), int(form, "position") || 0);
   refreshSite();
   back(`/admin/cars/${id}#colors`, "Colour saved.");
 }
@@ -212,6 +213,14 @@ export async function updatePhotoAction(form: FormData) {
   await updateImage(id, int(form, "image_id"), colorId, str(form, "kind") === "INTERIOR" ? "INTERIOR" : "EXTERIOR", int(form, "position") || 0);
   refreshSite();
   back(`/admin/cars/${id}#photos`, "Photo saved.");
+}
+
+export async function setCoverAction(form: FormData) {
+  await requireUser("FULL");
+  const id = int(form, "vehicle_id");
+  await setCover(id, int(form, "image_id"));
+  refreshSite();
+  back(`/admin/cars/${id}#photos`, "Cover photo set.");
 }
 
 export async function deletePhotoAction(form: FormData) {
