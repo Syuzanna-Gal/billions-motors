@@ -79,7 +79,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t.home.browseAll}
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {collection.slice(0, 6).map((car, i) => (
             <div key={car.id} className="flex" {...reveal(stagger(i))}>
               <CarCard car={car} locale={locale} t={t} />
