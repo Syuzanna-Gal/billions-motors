@@ -8,16 +8,23 @@ import {
 } from "../../../actions";
 import { ConfirmSubmit } from "../../../_components/ConfirmSubmit";
 import { CarForm } from "../CarForm";
+import { adminT, carFormOptions } from "@/lib/admin/lang";
+import type { AdminDict } from "@/lib/admin/i18n";
+import { interpolate } from "@/lib/format";
 
-export const metadata = { title: "Edit car" };
-
-const LANGS = [["en", "English"], ["hy", "Armenian"], ["ru", "Russian"]] as const;
+export async function generateMetadata() {
+  return { title: (await adminT()).carForm.editMeta };
+}
 
 export default async function EditCarPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser("FULL");
   const id = Number((await params).id);
   const car = Number.isInteger(id) ? await getCarForEdit(id) : null;
   if (!car) notFound();
+  const [t, options] = await Promise.all([adminT(), carFormOptions()]);
+  const te = t.carEdit;
+  const LANGS = (["en", "hy", "ru"] as const).map((l) => [l, t.common.langs[l]] as const);
+  const sel = { t: t.common };
   const others = (await listCarsAdmin()).filter((c) => c.id !== car.id);
   // Chosen cars first, in their order, then the rest.
   const relatedOrdered = [
@@ -28,32 +35,29 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/admin/cars" className="text-sm text-mute hover:text-ivory">← All cars</Link>
+        <Link href="/admin/cars" className="text-sm text-mute hover:text-ivory">{t.carForm.allCars}</Link>
         <a href={`/hy/cars/${car.slug}`} target="_blank" rel="noopener" className="text-sm text-gold hover:text-ivory">
-          View on site ↗
+          {t.common.viewOnSite}
         </a>
       </div>
       <h1 className="-mt-6 font-serif text-4xl font-medium">{carName(car)} {car.year}</h1>
 
-      <CarForm car={car} />
+      <CarForm car={car} t={t.carForm} options={options} />
 
       {/* ---------- Colours ---------- */}
       <section id="colors" className="scroll-mt-6">
-        <h2 className="text-xl font-semibold">Colours</h2>
-        <p className="mt-1 text-sm text-mute">
-          Two pickers on the car page: <b>Paint</b> (exterior photos) and <b>Interior</b> trims (interior photos).
-          Lower “order” numbers show first. Salespeople choose from paint colours.
-        </p>
+        <h2 className="text-xl font-semibold">{te.colours}</h2>
+        <p className="mt-1 text-sm text-mute">{te.coloursHelp}</p>
         <div className="mt-4 flex flex-col gap-3">
           {car.colors.map((c) => (
             <form key={`${c.id}-${c.kind}`} action={updateColorAction} className="grid items-end gap-3 rounded-2xl border border-line bg-ink-2 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_5rem_auto]">
               <input type="hidden" name="vehicle_id" value={car.id} />
               <input type="hidden" name="color_id" value={c.id} />
               <div>
-                <label className="label" htmlFor={`hex-${c.id}`}>Colour</label>
+                <label className="label" htmlFor={`hex-${c.id}`}>{t.common.colour}</label>
                 <input id={`hex-${c.id}`} name="hex" type="color" defaultValue={c.hex} className="h-12 w-16 cursor-pointer rounded-xl border border-line bg-ink" />
               </div>
-              <ColorKindSelect id={`ck-${c.id}`} value={c.kind} />
+              <ColorKindSelect {...sel} id={`ck-${c.id}`} value={c.kind} />
               {LANGS.map(([l, name]) => (
                 <div key={l}>
                   <label className="label" htmlFor={`name-${c.id}-${l}`}>{name}</label>
@@ -61,15 +65,15 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
                 </div>
               ))}
               <div>
-                <label className="label" htmlFor={`pos-${c.id}`}>Order</label>
+                <label className="label" htmlFor={`pos-${c.id}`}>{t.common.order}</label>
                 <input id={`pos-${c.id}`} name="position" type="number" defaultValue={c.position} className="field" />
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">Save</button>
+                <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">{t.common.save}</button>
                 <ConfirmSubmit formAction={deleteColorAction} className="rounded-full px-3 text-sm text-mute hover:text-[#f0a58f]"
-                  ariaLabel={`Delete colour ${c.name.en}`}
-                  message={`Delete the colour “${c.name.en}”? Its photos will be deleted too.`}>
-                  Delete
+                  ariaLabel={interpolate(te.deleteColour, { name: c.name.en })}
+                  message={interpolate(te.deleteColourConfirm, { name: c.name.en })}>
+                  {t.common.delete}
                 </ConfirmSubmit>
               </div>
             </form>
@@ -77,43 +81,40 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
           <form action={addColorAction} className="grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_auto]">
             <input type="hidden" name="vehicle_id" value={car.id} />
             <div>
-              <label className="label" htmlFor="new-hex">Colour</label>
+              <label className="label" htmlFor="new-hex">{t.common.colour}</label>
               <input id="new-hex" name="hex" type="color" defaultValue="#ecebe6" className="h-12 w-16 cursor-pointer rounded-xl border border-line bg-ink" />
             </div>
-            <ColorKindSelect id="new-kind" />
+            <ColorKindSelect {...sel} id="new-kind" />
             {LANGS.map(([l, name]) => (
               <div key={l}>
                 <label className="label" htmlFor={`new-name-${l}`}>{name}{l === "en" && " *"}</label>
-                <input id={`new-name-${l}`} name={`name_${l}`} required={l === "en"} placeholder={l === "en" ? "e.g. Pearl White" : ""} className="field" />
+                <input id={`new-name-${l}`} name={`name_${l}`} required={l === "en"} placeholder={l === "en" ? te.colourPlaceholder : ""} className="field" />
               </div>
             ))}
-            <button type="submit" className="btn-gold !min-h-12">+ Add colour</button>
+            <button type="submit" className="btn-gold !min-h-12">{te.addColour}</button>
           </form>
         </div>
       </section>
 
       {/* ---------- Photos ---------- */}
       <section id="photos" className="scroll-mt-6">
-        <h2 className="text-xl font-semibold">Photos</h2>
-        <p className="mt-1 text-sm text-mute">
-          Link a photo to a colour to show it when that colour is picked. “All colours” photos are used when a colour has none.
-          The <b>cover</b> is the picture on catalogue cards ({car.images.length} photos).
-        </p>
+        <h2 className="text-xl font-semibold">{te.photos}</h2>
+        <p className="mt-1 text-sm text-mute">{interpolate(te.photosHelp, { count: car.images.length })}</p>
         <form action={uploadPhotosAction}
           className="mt-4 grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <input type="hidden" name="vehicle_id" value={car.id} />
           <div>
-            <label className="label" htmlFor="photos-input">Photos (JPG, PNG, WebP · up to 15 MB each)</label>
+            <label className="label" htmlFor="photos-input">{te.photosInput}</label>
             <input id="photos-input" name="photos" type="file" multiple required accept="image/jpeg,image/png,image/webp,image/avif"
               className="field !py-2.5 file:mr-3 file:rounded-full file:border-0 file:bg-gold/15 file:px-3 file:py-1 file:text-gold" />
           </div>
-          <ColorSelect colors={car.colors} id="upload-color" />
-          <KindSelect id="upload-kind" />
-          <button type="submit" className="btn-gold !min-h-12">Upload</button>
+          <ColorSelect {...sel} colors={car.colors} id="upload-color" />
+          <KindSelect {...sel} id="upload-kind" />
+          <button type="submit" className="btn-gold !min-h-12">{te.upload}</button>
         </form>
 
         {car.images.length === 0 ? (
-          <p className="mt-4 text-sm text-[#f0a58f]">No photos yet — the site shows a placeholder.</p>
+          <p className="mt-4 text-sm text-[#f0a58f]">{te.noPhotos}</p>
         ) : (
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {car.images.map((img) => (
@@ -121,26 +122,26 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img.url} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover" />
                 {img.is_cover ? (
-                  <span className="absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-ink">Cover</span>
+                  <span className="absolute left-3 top-3 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-ink">{te.cover}</span>
                 ) : (
                   <form action={setCoverAction} className="absolute left-3 top-3">
                     <input type="hidden" name="vehicle_id" value={car.id} />
                     <input type="hidden" name="image_id" value={img.id} />
-                    <button type="submit" className="rounded-full bg-ink/80 px-3 py-1 text-xs text-ivory backdrop-blur hover:text-gold">Make cover</button>
+                    <button type="submit" className="rounded-full bg-ink/80 px-3 py-1 text-xs text-ivory backdrop-blur hover:text-gold">{te.makeCover}</button>
                   </form>
                 )}
                 <form key={`${img.color_id}-${img.kind}`} action={updatePhotoAction} className="grid grid-cols-2 gap-2 p-3">
                   <input type="hidden" name="vehicle_id" value={car.id} />
                   <input type="hidden" name="image_id" value={img.id} />
-                  <ColorSelect colors={car.colors} id={`c-${img.id}`} value={img.color_id} />
-                  <KindSelect id={`k-${img.id}`} value={img.kind} />
+                  <ColorSelect {...sel} colors={car.colors} id={`c-${img.id}`} value={img.color_id} />
+                  <KindSelect {...sel} id={`k-${img.id}`} value={img.kind} />
                   <div>
-                    <label className="label" htmlFor={`p-${img.id}`}>Order</label>
+                    <label className="label" htmlFor={`p-${img.id}`}>{t.common.order}</label>
                     <input id={`p-${img.id}`} name="position" type="number" defaultValue={img.position} className="field" />
                   </div>
                   <div className="flex items-end gap-2">
-                    <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">Save</button>
-                    <ConfirmSubmit formAction={deletePhotoAction} className="px-2 text-sm text-mute hover:text-[#f0a58f]" message="Delete this photo?">Delete</ConfirmSubmit>
+                    <button type="submit" className="btn-outline !min-h-12 !px-4 text-sm">{t.common.save}</button>
+                    <ConfirmSubmit formAction={deletePhotoAction} className="px-2 text-sm text-mute hover:text-[#f0a58f]" message={te.deletePhotoConfirm}>{t.common.delete}</ConfirmSubmit>
                   </div>
                 </form>
               </li>
@@ -151,10 +152,8 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
 
       {/* ---------- You may also like ---------- */}
       <section id="related" className="scroll-mt-6">
-        <h2 className="text-xl font-semibold">“You may also like”</h2>
-        <p className="mt-1 text-sm text-mute">
-          Tick up to 6 cars to show under this car, in this order. Nothing ticked = automatic (cars with the same body type).
-        </p>
+        <h2 className="text-xl font-semibold">{te.related}</h2>
+        <p className="mt-1 text-sm text-mute">{te.relatedHelp}</p>
         <form action={saveRelatedAction} className="mt-4 flex flex-col gap-4">
           <input type="hidden" name="vehicle_id" value={car.id} />
           <div className="grid max-h-96 gap-1 overflow-y-auto rounded-2xl border border-line bg-ink-2 p-3 sm:grid-cols-2">
@@ -162,30 +161,27 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
               <label key={o.id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 text-sm hover:bg-ink-3">
                 <input type="checkbox" name="related" value={o.id} defaultChecked={car.related.includes(o.id)} className="size-5 accent-[#c9a66b]" />
                 <span>{o.name}</span>
-                {!o.published && <span className="text-xs text-mute-2">(hidden)</span>}
+                {!o.published && <span className="text-xs text-mute-2">{t.common.hiddenMark}</span>}
               </label>
             ))}
           </div>
-          <button type="submit" className="btn-gold self-start">Save “You may also like”</button>
+          <button type="submit" className="btn-gold self-start">{te.relatedSave}</button>
         </form>
       </section>
 
       {/* ---------- Delete ---------- */}
       <section>
         <details className="rounded-2xl border border-[#f0a58f]/30 p-4">
-          <summary className="cursor-pointer text-sm text-[#f0a58f]">Delete this car</summary>
+          <summary className="cursor-pointer text-sm text-[#f0a58f]">{te.deleteTitle}</summary>
           <form action={deleteCarAction} className="mt-4 flex flex-col gap-3">
             <input type="hidden" name="id" value={car.id} />
-            <p className="text-sm text-mute">
-              This removes the car, its colours and photos for good. Past sales stay in the sales history.
-              To just hide it, untick “Show on the site” instead.
-            </p>
+            <p className="text-sm text-mute">{te.deleteHelp}</p>
             <label className="flex items-center gap-3 text-sm">
               <input type="checkbox" name="confirm" required className="size-5 accent-[#f0a58f]" />
-              Yes, delete {carName(car)} permanently
+              {interpolate(te.deleteConfirm, { car: carName(car) })}
             </label>
             <button type="submit" className="self-start rounded-full border border-[#f0a58f]/60 px-5 py-3 text-sm text-[#f0a58f] hover:bg-[#f0a58f]/10">
-              Delete car
+              {te.deleteBtn}
             </button>
           </form>
         </details>
@@ -194,7 +190,9 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
   );
 }
 
-function ColorSelect({ colors, id, value }: { colors: { id: number; kind: string; name: { en: string } }[]; id: string; value?: number | null }) {
+type Sel = { t: AdminDict["common"] };
+
+function ColorSelect({ t, colors, id, value }: Sel & { colors: { id: number; kind: string; name: { en: string } }[]; id: string; value?: number | null }) {
   const group = (kind: string, label: string) => {
     const list = colors.filter((c) => c.kind === kind);
     return list.length > 0 && (
@@ -205,35 +203,35 @@ function ColorSelect({ colors, id, value }: { colors: { id: number; kind: string
   };
   return (
     <div>
-      <label className="label" htmlFor={id}>Colour</label>
+      <label className="label" htmlFor={id}>{t.colour}</label>
       <select id={id} name="color_id" defaultValue={value ?? ""} className="field">
-        <option value="">All colours</option>
-        {group("EXTERIOR", "Paint")}
-        {group("INTERIOR", "Interior")}
+        <option value="">{t.allColours}</option>
+        {group("EXTERIOR", t.paint)}
+        {group("INTERIOR", t.interior)}
       </select>
     </div>
   );
 }
 
-function ColorKindSelect({ id, value }: { id: string; value?: string }) {
+function ColorKindSelect({ t, id, value }: Sel & { id: string; value?: string }) {
   return (
     <div>
-      <label className="label" htmlFor={id}>Type</label>
+      <label className="label" htmlFor={id}>{t.type}</label>
       <select id={id} name="kind" defaultValue={value ?? "EXTERIOR"} className="field">
-        <option value="EXTERIOR">Paint</option>
-        <option value="INTERIOR">Interior</option>
+        <option value="EXTERIOR">{t.paint}</option>
+        <option value="INTERIOR">{t.interior}</option>
       </select>
     </div>
   );
 }
 
-function KindSelect({ id, value }: { id: string; value?: string }) {
+function KindSelect({ t, id, value }: Sel & { id: string; value?: string }) {
   return (
     <div>
-      <label className="label" htmlFor={id}>Type</label>
+      <label className="label" htmlFor={id}>{t.type}</label>
       <select id={id} name="kind" defaultValue={value ?? "EXTERIOR"} className="field">
-        <option value="EXTERIOR">Exterior</option>
-        <option value="INTERIOR">Interior</option>
+        <option value="EXTERIOR">{t.exterior}</option>
+        <option value="INTERIOR">{t.interior}</option>
       </select>
     </div>
   );

@@ -21,10 +21,17 @@ export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 export class UploadError extends Error {}
 
 /** Saves an uploaded image and returns its public URL. */
-export async function saveImage(file: File, folder: string): Promise<string> {
+/** Messages for rejected files; "{file}" is replaced with the file name. */
+export type UploadMessages = { type: string; size: string };
+const DEFAULT_UPLOAD_MESSAGES: UploadMessages = {
+  type: "{file}: only JPG, PNG, WebP or AVIF images",
+  size: "{file}: larger than 15 MB",
+};
+
+export async function saveImage(file: File, folder: string, messages: UploadMessages = DEFAULT_UPLOAD_MESSAGES): Promise<string> {
   const ext = TYPES[file.type];
-  if (!ext) throw new UploadError(`${file.name}: only JPG, PNG, WebP or AVIF images`);
-  if (file.size > MAX_UPLOAD_BYTES) throw new UploadError(`${file.name}: larger than 15 MB`);
+  if (!ext) throw new UploadError(messages.type.replace("{file}", file.name));
+  if (file.size > MAX_UPLOAD_BYTES) throw new UploadError(messages.size.replace("{file}", file.name));
   const safeFolder = folder.replace(/[^a-z0-9/_-]/gi, "");
   const name = `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
   const dir = path.join(UPLOAD_DIR, safeFolder);

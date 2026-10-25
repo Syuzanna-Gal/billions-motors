@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  countUsers, endSession, hashPassword, loginBlocked, recordLoginFailure, requireUser, startSession, verifyPassword, type Role,
+  countUsers, endSession, getCurrentUser, hashPassword, loginBlocked, recordLoginFailure, requireUser, startSession, verifyPassword, type Role,
 } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { locales } from "@/i18n/config";
@@ -17,6 +17,10 @@ import { LEAD_STATUSES, setLeadStatus, type LeadStatus } from "@/lib/admin/leads
 import { saveSectionTexts, sectionBySlug } from "@/lib/admin/texts";
 import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/lib/settings";
 import { saveImage, UploadError } from "@/lib/media";
+import { interpolate } from "@/lib/format";
+import { cookies } from "next/headers";
+import { ADMIN_LANG_COOKIE, adminT } from "@/lib/admin/lang";
+import { isAdminLang } from "@/lib/admin/i18n";
 
 /*
  * Every action starts with requireUser(...) — the role check happens on the server,
@@ -44,13 +48,14 @@ export type FormState = { error?: string; message?: string; errors?: FieldErrors
 export async function loginAction(_: FormState, form: FormData): Promise<FormState> {
   const email = str(form, "email").toLowerCase();
   const password = String(form.get("password") ?? "");
-  if (loginBlocked(email)) return { error: "Too many attempts. Wait 15 minutes and try again." };
+  const t = await adminT();
+  if (loginBlocked(email)) return { error: t.auth.tooMany };
 
   const db = await getDb();
   const [user] = await db.query<{ id: number; password_hash: string }>("SELECT id, password_hash FROM admin_users WHERE email = $1", [email]);
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     recordLoginFailure(email);
-    return { error: "Wrong email or password." };
+    return { error: t.auth.wrong };
   }
   await startSession(user.id);
   redirect("/admin");
@@ -67,8 +72,9 @@ export async function setupAction(_: FormState, form: FormData): Promise<FormSta
   const email = str(form, "email").toLowerCase();
   const name = str(form, "name", 80);
   const password = String(form.get("password") ?? "");
-  if (!validEmail(email)) return { error: "Enter a valid email." };
-  if (password.length < PASSWORD_MIN) return { error: `Password must be at least ${PASSWORD_MIN} characters.` };
+  const t = await adminT();
+  if (!validEmail(email)) return { error: t.auth.invalidEmail };
+  if (password.length < PASSWORD_MIN) return { error: interpolate(t.auth.passwordShort, { min: PASSWORD_MIN }) };
   const db = await getDb();
   const [{ id }] = await db.query<{ id: number }>(
     "INSERT INTO admin_users (email, name, role, password_hash) VALUES ($1, $2, 'FULL', $3) RETURNING id",
@@ -82,14 +88,15 @@ export async function setupAction(_: FormState, form: FormData): Promise<FormSta
 
 export async function sellAction(_: SaleResult | undefined, form: FormData): Promise<SaleResult> {
   const user = await requireUser();
+  const t = (await adminT()).sell;
   const vehicleId = int(form, "vehicle_id");
   const quantity = int(form, "quantity") || 1;
   const colorId = str(form, "color_id") ? int(form, "color_id") : null;
   const priceRaw = str(form, "price_amd").replace(/[\s,]/g, "");
   const price = priceRaw ? Number(priceRaw) : null;
-  if (!Number.isInteger(vehicleId)) return { ok: false, error: "Choose a car." };
-  if (quantity < 1 || quantity > 50) return { ok: false, error: "Quantity must be between 1 and 50." };
-  if (price !== null && (!Number.isInteger(price) || price <= 0)) return { ok: false, error: "Price must be a whole number in AMD." };
+  if (!Number.isInteger(vehicleId)) return { ok: false, error: t.chooseCar };
+  if (quantity < 1 || quantity > 50) return { ok: false, error: t.quantityRange };
+  if (price !== null && (!Number.isInteger(price) || price <= 0)) return { ok: false, error: t.priceWhole };
 
   const result = await recordSale(
     {
@@ -99,6 +106,7 @@ export async function sellAction(_: SaleResult | undefined, form: FormData): Pro
       note: str(form, "note", 500) || null,
     },
     user,
+    t,
   );
   if (result.ok) {
     refreshSite();
@@ -109,9 +117,10 @@ export async function sellAction(_: SaleResult | undefined, form: FormData): Pro
 
 export async function cancelSaleAction(form: FormData) {
   const user = await requireUser();
-  const error = await cancelSale(int(form, "sale_id"), user);
+  const t = (await adminT()).sell;
+  const error = await cancelSale(int(form, "sale_id"), user, t);
   if (!error) refreshSite();
-  back("/admin/sell", error ?? "Sale undone, stock restored.", error ? "err" : "ok");
+  back("/admin/sell", error ?? t.undoneOk, error ? "err" : "ok");
 }
 
 /* ---------- Cars (Full only) ---------- */
@@ -121,20 +130,22 @@ export async function saveCarAction(_: FormState, form: FormData): Promise<FormS
   const idRaw = str(form, "id");
   const id = idRaw ? Number(idRaw) : undefined;
   const values = Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
-  const { data, errors } = parseCarForm(form);
-  if (Object.keys(errors).length) return { error: "Please fix the highlighted fields.", errors, values };
+  const t = (await adminT()).carForm;
+  const { data, errors } = parseCarForm(form, t.errors);
+  if (Object.keys(errors).length) return { error: t.fix, errors, values };
   const savedId = await saveCar(data, id);
   refreshSite();
-  if (!id) redirect(`/admin/cars/${savedId}?ok=${encodeURIComponent("Car created. Now add colours and photos below.")}`);
-  return { message: "Saved.", values: { ...values, slug: data.slug } };
+  if (!id) redirect(`/admin/cars/${savedId}?ok=${encodeURIComponent(t.created)}`);
+  return { message: t.saved, values: { ...values, slug: data.slug } };
 }
 
 export async function deleteCarAction(form: FormData) {
   await requireUser("FULL");
-  if (form.get("confirm") !== "on") back(`/admin/cars/${int(form, "id")}`, "Tick the box to confirm deleting.", "err");
+  const t = (await adminT()).carEdit;
+  if (form.get("confirm") !== "on") back(`/admin/cars/${int(form, "id")}`, t.deleteTick, "err");
   await deleteCar(int(form, "id"));
   refreshSite();
-  back("/admin/cars", "Car deleted.");
+  back("/admin/cars", t.carDeleted);
 }
 
 export async function togglePublishedAction(form: FormData) {
@@ -148,7 +159,7 @@ export async function togglePublishedAction(form: FormData) {
 export async function setStockAction(form: FormData) {
   await requireUser("FULL");
   const stock = str(form, "stock") === "" ? null : int(form, "stock");
-  if (stock !== null && (!Number.isInteger(stock) || stock < 0)) back("/admin/cars", "Stock must be 0 or more (or empty for not counted).", "err");
+  if (stock !== null && (!Number.isInteger(stock) || stock < 0)) back("/admin/cars", (await adminT()).cars.stockInvalid, "err");
   const db = await getDb();
   await db.query("UPDATE vehicles SET stock = $1, updated_at = now() WHERE id = $2", [stock, int(form, "id")]);
   refreshSite();
@@ -164,20 +175,22 @@ export async function addColorAction(form: FormData) {
   const id = int(form, "vehicle_id");
   const hex = str(form, "hex");
   const names = colorNames(form);
-  if (!validHex(hex) || !names.en) back(`/admin/cars/${id}#colors`, "Colour needs a code and an English name.", "err");
+  const t = (await adminT()).carEdit;
+  if (!validHex(hex) || !names.en) back(`/admin/cars/${id}#colors`, t.colourNeeds, "err");
   await addColor(id, colorKind(form), hex, names);
   refreshSite();
-  back(`/admin/cars/${id}#colors`, "Colour added.");
+  back(`/admin/cars/${id}#colors`, t.colourAdded);
 }
 
 export async function updateColorAction(form: FormData) {
   await requireUser("FULL");
   const id = int(form, "vehicle_id");
   const hex = str(form, "hex");
-  if (!validHex(hex)) back(`/admin/cars/${id}#colors`, "Invalid colour code.", "err");
+  const t = (await adminT()).carEdit;
+  if (!validHex(hex)) back(`/admin/cars/${id}#colors`, t.colourInvalid, "err");
   await updateColor(id, int(form, "color_id"), colorKind(form), hex, colorNames(form), int(form, "position") || 0);
   refreshSite();
-  back(`/admin/cars/${id}#colors`, "Colour saved.");
+  back(`/admin/cars/${id}#colors`, t.colourSaved);
 }
 
 export async function deleteColorAction(form: FormData) {
@@ -185,7 +198,7 @@ export async function deleteColorAction(form: FormData) {
   const id = int(form, "vehicle_id");
   await deleteColor(id, int(form, "color_id"));
   refreshSite();
-  back(`/admin/cars/${id}#colors`, "Colour and its photos removed.");
+  back(`/admin/cars/${id}#colors`, (await adminT()).carEdit.colourDeleted);
 }
 
 export async function uploadPhotosAction(form: FormData) {
@@ -194,17 +207,18 @@ export async function uploadPhotosAction(form: FormData) {
   const colorId = str(form, "color_id") ? int(form, "color_id") : null;
   const kind = str(form, "kind") === "INTERIOR" ? "INTERIOR" : "EXTERIOR";
   const files = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
-  if (!files.length) back(`/admin/cars/${id}#photos`, "Choose at least one photo.", "err");
+  const t = (await adminT()).carEdit;
+  if (!files.length) back(`/admin/cars/${id}#photos`, t.choosePhoto, "err");
   const urls: string[] = [];
   try {
-    for (const file of files) urls.push(await saveImage(file, `vehicles/${id}`));
+    for (const file of files) urls.push(await saveImage(file, `vehicles/${id}`, { type: t.uploadType, size: t.uploadSize }));
   } catch (err) {
     if (err instanceof UploadError) back(`/admin/cars/${id}#photos`, err.message, "err");
     throw err;
   }
   await addImages(id, colorId, kind, urls);
   refreshSite();
-  back(`/admin/cars/${id}#photos`, `${urls.length} photo${urls.length > 1 ? "s" : ""} uploaded.`);
+  back(`/admin/cars/${id}#photos`, interpolate(t.photosUploaded, { count: urls.length }));
 }
 
 export async function updatePhotoAction(form: FormData) {
@@ -213,7 +227,7 @@ export async function updatePhotoAction(form: FormData) {
   const colorId = str(form, "color_id") ? int(form, "color_id") : null;
   await updateImage(id, int(form, "image_id"), colorId, str(form, "kind") === "INTERIOR" ? "INTERIOR" : "EXTERIOR", int(form, "position") || 0);
   refreshSite();
-  back(`/admin/cars/${id}#photos`, "Photo saved.");
+  back(`/admin/cars/${id}#photos`, (await adminT()).carEdit.photoSaved);
 }
 
 export async function setCoverAction(form: FormData) {
@@ -221,7 +235,7 @@ export async function setCoverAction(form: FormData) {
   const id = int(form, "vehicle_id");
   await setCover(id, int(form, "image_id"));
   refreshSite();
-  back(`/admin/cars/${id}#photos`, "Cover photo set.");
+  back(`/admin/cars/${id}#photos`, (await adminT()).carEdit.coverSet);
 }
 
 export async function deletePhotoAction(form: FormData) {
@@ -229,18 +243,19 @@ export async function deletePhotoAction(form: FormData) {
   const id = int(form, "vehicle_id");
   await deleteImage(id, int(form, "image_id"));
   refreshSite();
-  back(`/admin/cars/${id}#photos`, "Photo deleted.");
+  back(`/admin/cars/${id}#photos`, (await adminT()).carEdit.photoDeleted);
 }
 
 export async function saveRelatedAction(form: FormData) {
   await requireUser("FULL");
   const id = int(form, "vehicle_id");
   const ids = form.getAll("related").map((v) => Number(v)).filter((n) => Number.isInteger(n) && n !== id);
-  if (ids.length > 6) back(`/admin/cars/${id}#related`, "Choose up to 6 cars.", "err");
-  if (!(await getCarForEdit(id))) back("/admin/cars", "Car not found.", "err");
+  const t = (await adminT()).carEdit;
+  if (ids.length > 6) back(`/admin/cars/${id}#related`, t.relatedMax, "err");
+  if (!(await getCarForEdit(id))) back("/admin/cars", t.carNotFound, "err");
   await setRelated(id, ids);
   refreshSite();
-  back(`/admin/cars/${id}#related`, ids.length ? "“You may also like” saved." : "Back to automatic suggestions (same body type).");
+  back(`/admin/cars/${id}#related`, ids.length ? t.relatedSaved : t.relatedAuto);
 }
 
 /* ---------- Contact info (Full only) ---------- */
@@ -249,16 +264,16 @@ export async function saveSettingsAction(form: FormData) {
   await requireUser("FULL");
   const values: Partial<Settings> = {};
   for (const key of SETTING_KEYS) values[key] = str(form, key, 500);
+  const t = (await adminT()).contact;
+  const fieldNames = { instagram: t.instagram, facebook: t.facebook, map_url: t.mapUrl };
   for (const k of ["instagram", "facebook", "map_url"] as const) {
-    if (values[k] && !/^https:\/\//.test(values[k]!)) back("/admin/contact", `${k} must start with https://`, "err");
+    if (values[k] && !/^https:\/\//.test(values[k]!)) back("/admin/contact", interpolate(t.mustHttps, { field: fieldNames[k] }), "err");
   }
-  if (values.email && !validEmail(values.email)) back("/admin/contact", "Email doesn't look right.", "err");
-  if (values.map_location && !parseMapLocation(values.map_location)) {
-    back("/admin/contact", "Couldn't find coordinates in the map location. In Google Maps right-click the showroom and click the numbers (e.g. 40.2231, 44.5315), then paste them here.", "err");
-  }
+  if (values.email && !validEmail(values.email)) back("/admin/contact", t.badEmail, "err");
+  if (values.map_location && !parseMapLocation(values.map_location)) back("/admin/contact", t.badMap, "err");
   await saveSettings(values);
   refreshSite();
-  back("/admin/contact", "Contact info saved. It's live on the site.");
+  back("/admin/contact", t.saved);
 }
 
 /* ---------- Users (Full only) ---------- */
@@ -269,32 +284,36 @@ export async function createUserAction(form: FormData) {
   await requireUser("FULL");
   const email = str(form, "email").toLowerCase();
   const password = String(form.get("password") ?? "");
-  if (!validEmail(email)) back("/admin/users", "Enter a valid email.", "err");
-  if (password.length < PASSWORD_MIN) back("/admin/users", `Password must be at least ${PASSWORD_MIN} characters.`, "err");
-  const error = await createUser(email, str(form, "name", 80), role(form), password);
-  back("/admin/users", error ?? `User ${email} added.`, error ? "err" : "ok");
+  const t = await adminT();
+  if (!validEmail(email)) back("/admin/users", t.auth.invalidEmail, "err");
+  if (password.length < PASSWORD_MIN) back("/admin/users", interpolate(t.auth.passwordShort, { min: PASSWORD_MIN }), "err");
+  const error = await createUser(email, str(form, "name", 80), role(form), password, t.users);
+  back("/admin/users", error ?? interpolate(t.users.added, { email }), error ? "err" : "ok");
 }
 
 export async function updateUserAction(form: FormData) {
   await requireUser("FULL");
-  const error = await updateUser(int(form, "id"), str(form, "name", 80), role(form));
-  back("/admin/users", error ?? "User saved.", error ? "err" : "ok");
+  const t = (await adminT()).users;
+  const error = await updateUser(int(form, "id"), str(form, "name", 80), role(form), t);
+  back("/admin/users", error ?? t.saved, error ? "err" : "ok");
 }
 
 export async function resetPasswordAction(form: FormData) {
   await requireUser("FULL");
   const password = String(form.get("password") ?? "");
-  if (password.length < PASSWORD_MIN) back("/admin/users", `Password must be at least ${PASSWORD_MIN} characters.`, "err");
+  const t = await adminT();
+  if (password.length < PASSWORD_MIN) back("/admin/users", interpolate(t.auth.passwordShort, { min: PASSWORD_MIN }), "err");
   await setPassword(int(form, "id"), password);
-  back("/admin/users", "Password changed. That user is logged out everywhere.");
+  back("/admin/users", t.users.passwordChanged);
 }
 
 export async function deleteUserAction(form: FormData) {
   const me = await requireUser("FULL");
   const id = int(form, "id");
-  if (id === me.id) back("/admin/users", "You can't delete yourself.", "err");
-  const error = await deleteUser(id);
-  back("/admin/users", error ?? "User deleted.", error ? "err" : "ok");
+  const t = (await adminT()).users;
+  if (id === me.id) back("/admin/users", t.cantDeleteSelf, "err");
+  const error = await deleteUser(id, t);
+  back("/admin/users", error ?? t.deleted, error ? "err" : "ok");
 }
 
 /* ---------- Leads (Full only) ---------- */
@@ -302,7 +321,7 @@ export async function deleteUserAction(form: FormData) {
 export async function setLeadStatusAction(form: FormData) {
   await requireUser("FULL");
   const status = str(form, "status") as LeadStatus;
-  if (!LEAD_STATUSES.includes(status)) back("/admin/leads", "Unknown status.", "err");
+  if (!LEAD_STATUSES.includes(status)) back("/admin/leads", (await adminT()).leads.unknownStatus, "err");
   await setLeadStatus(int(form, "id"), status);
   revalidatePath("/admin/leads");
 }
@@ -313,13 +332,27 @@ export type TextsState = { message?: string; error?: string; errors?: Record<str
 
 export async function saveTextsAction(_: TextsState, form: FormData): Promise<TextsState> {
   const user = await requireUser("FULL");
+  const t = (await adminT()).texts;
   const section = sectionBySlug(str(form, "section"));
-  if (!section) return { error: "Unknown section." };
-  const { saved, errors } = await saveSectionTexts(section, form, user.name || user.email);
-  if (Object.keys(errors).length) {
-    return { error: "Some texts need fixing — see the red notes below. Nothing was saved yet.", errors };
-  }
+  if (!section) return { error: t.unknownSection };
+  const { saved, errors } = await saveSectionTexts(section, form, user.name || user.email, t);
+  if (Object.keys(errors).length) return { error: t.fix, errors };
   refreshSite();
   revalidatePath("/admin/texts");
-  return { message: saved ? "Saved. The site shows the new texts now." : "Saved. All texts in this section use the defaults." };
+  return { message: saved ? t.saved : t.savedDefaults };
+}
+
+/* ---------- Admin language ---------- */
+
+/** Switches the admin panel language: saved on the user's account and in this browser. */
+export async function setAdminLangAction(form: FormData) {
+  const lang = str(form, "lang");
+  if (!isAdminLang(lang)) return;
+  (await cookies()).set(ADMIN_LANG_COOKIE, lang, { path: "/admin", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true });
+  const user = await getCurrentUser();
+  if (user) {
+    const db = await getDb();
+    await db.query("UPDATE admin_users SET lang = $1 WHERE id = $2", [lang, user.id]);
+  }
+  revalidatePath("/admin", "layout");
 }

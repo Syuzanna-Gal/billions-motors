@@ -218,4 +218,11 @@ export const migrations: { id: string; sql: string }[] = [
       );
     `,
   },
+  {
+    id: "006_admin_language",
+    sql: /* sql */ `
+      -- Each admin's panel language (NULL = not chosen yet; the browser language is used).
+      ALTER TABLE admin_users ADD COLUMN lang text CHECK (lang IN ('hy', 'en'));
+    `,
+  },
 ];

@@ -3,11 +3,13 @@
 import { useActionState, useState } from "react";
 import type { SellableCar, SaleResult } from "@/lib/admin/sales";
 import { sellAction } from "../../actions";
-
-const statusLabel: Record<string, string> = { IN_STOCK: "In stock", IN_TRANSIT: "In transit", PRE_ORDER: "Pre-order" };
+import type { AdminDict } from "@/lib/admin/i18n";
+import { interpolate } from "@/lib/format";
 
 /** Pick the car (and colour), press one button. Optional details are folded away. */
-export function SellForm({ cars }: { cars: SellableCar[] }) {
+export function SellForm({
+  cars, t, statusLabels, saving,
+}: { cars: SellableCar[]; t: AdminDict["sell"]; statusLabels: Record<string, string>; saving: string }) {
   const [carId, setCarId] = useState("");
   const [formKey, setFormKey] = useState(0);
   const [state, action, pending] = useActionState<SaleResult | undefined, FormData>(async (prev, form) => {
@@ -26,13 +28,13 @@ export function SellForm({ cars }: { cars: SellableCar[] }) {
     <div className="flex flex-col gap-5">
       {state?.ok && (
         <div role="status" className="rounded-2xl border border-gold/40 bg-gold/10 p-4 text-gold">
-          <p className="font-semibold">Sold: {state.carName}</p>
+          <p className="font-semibold">{interpolate(t.sold, { car: state.carName })}</p>
           <p className="mt-1 text-sm">
             {state.tracked
               ? state.stockLeft === 0
-                ? "That was the last one — the car is now hidden from the site."
-                : `${state.stockLeft} left in stock.`
-              : "This car isn't counted in stock (pre-order / in transit), so only the sale was recorded."}
+                ? t.lastOne
+                : interpolate(t.left, { count: state.stockLeft ?? 0 })
+              : t.untracked}
           </p>
           <button
             type="button"
@@ -42,7 +44,7 @@ export function SellForm({ cars }: { cars: SellableCar[] }) {
               setFormKey((k) => k + 1);
             }}
           >
-            Record another sale
+            {t.another}
           </button>
         </div>
       )}
@@ -52,12 +54,12 @@ export function SellForm({ cars }: { cars: SellableCar[] }) {
 
       <form key={formKey} action={action} className="flex flex-col gap-5 rounded-[24px] border border-line bg-ink-2 p-5 sm:p-7">
         <div>
-          <label htmlFor="vehicle_id" className="label">1. Which car was sold?</label>
+          <label htmlFor="vehicle_id" className="label">{t.which}</label>
           <select id="vehicle_id" name="vehicle_id" required value={carId} onChange={(e) => setCarId(e.target.value)} className="field text-base">
-            <option value="" disabled>Choose a car…</option>
+            <option value="" disabled>{t.choose}</option>
             {cars.map((c) => (
               <option key={c.id} value={c.id} disabled={c.stock === 0}>
-                {c.name} — {c.stock === null ? statusLabel[c.status] ?? c.status : c.stock === 0 ? "sold out" : `${c.stock} in stock`}
+                {c.name} — {c.stock === null ? statusLabels[c.status] ?? c.status : c.stock === 0 ? t.soldOut : interpolate(t.inStock, { count: c.stock })}
               </option>
             ))}
           </select>
@@ -65,7 +67,7 @@ export function SellForm({ cars }: { cars: SellableCar[] }) {
 
         {car && car.colors.length > 0 && (
           <fieldset>
-            <legend className="label">2. Colour</legend>
+            <legend className="label">{t.colour}</legend>
             <div className="flex flex-wrap gap-2">
               {car.colors.map((c, i) => (
                 <label key={c.id} className="cursor-pointer">
@@ -81,33 +83,33 @@ export function SellForm({ cars }: { cars: SellableCar[] }) {
         )}
 
         <details className="rounded-2xl border border-line p-4">
-          <summary className="cursor-pointer text-sm text-mute">Optional: quantity, price, customer, note</summary>
+          <summary className="cursor-pointer text-sm text-mute">{t.optional}</summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="quantity" className="label">Quantity</label>
+              <label htmlFor="quantity" className="label">{t.quantity}</label>
               <input id="quantity" name="quantity" type="number" min={1} max={car?.stock ?? 50} defaultValue={1} className="field" />
             </div>
             <div>
-              <label htmlFor="price_amd" className="label">Final price (AMD)</label>
+              <label htmlFor="price_amd" className="label">{t.finalPrice}</label>
               <input id="price_amd" name="price_amd" inputMode="numeric" className="field" />
             </div>
             <div>
-              <label htmlFor="customer_name" className="label">Customer name</label>
+              <label htmlFor="customer_name" className="label">{t.customerName}</label>
               <input id="customer_name" name="customer_name" className="field" />
             </div>
             <div>
-              <label htmlFor="customer_phone" className="label">Customer phone</label>
+              <label htmlFor="customer_phone" className="label">{t.customerPhone}</label>
               <input id="customer_phone" name="customer_phone" type="tel" className="field" />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="note" className="label">Note</label>
+              <label htmlFor="note" className="label">{t.note}</label>
               <textarea id="note" name="note" className="field" />
             </div>
           </div>
         </details>
 
         <button type="submit" disabled={!car || soldOut || pending} className="btn-gold min-h-14 text-base disabled:opacity-50">
-          {pending ? "Saving…" : car ? `Mark “${car.name}” as sold` : "Mark as sold"}
+          {pending ? saving : car ? interpolate(t.markSold, { car: car.name }) : t.markSoldEmpty}
         </button>
       </form>
     </div>

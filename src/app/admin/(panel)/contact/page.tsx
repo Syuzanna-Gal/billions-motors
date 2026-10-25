@@ -1,12 +1,18 @@
 import { requireUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import { saveSettingsAction } from "../../actions";
+import { adminT } from "@/lib/admin/lang";
+import { interpolate } from "@/lib/format";
 
-export const metadata = { title: "Contact info" };
+export async function generateMetadata() {
+  return { title: (await adminT()).contact.title };
+}
 
 export default async function ContactSettingsPage() {
   await requireUser("FULL");
-  const s = await getSettings();
+  const [s, all] = await Promise.all([getSettings(), adminT()]);
+  const t = all.contact;
+  const langs = all.common.langs;
 
   const field = (name: keyof typeof s, label: string, hint?: string, type = "text") => (
     <div>
@@ -25,37 +31,34 @@ export default async function ContactSettingsPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <header>
-        <h1 className="font-serif text-4xl font-medium">Contact info</h1>
-        <p className="mt-2 text-mute">Shown in the header, footer, contact page and on every car page.</p>
+        <h1 className="font-serif text-4xl font-medium">{t.title}</h1>
+        <p className="mt-2 text-mute">{t.lead}</p>
       </header>
       <form action={saveSettingsAction} className="flex flex-col gap-6">
         <fieldset className="grid gap-4 rounded-[20px] border border-line bg-ink-2 p-5 sm:grid-cols-2 sm:p-6">
-          <legend className="px-2 text-sm font-semibold text-gold-mid">Phone and messengers</legend>
-          {field("phone", "Phone", "As shown on the site, e.g. +374 94 000 000", "tel")}
-          {field("whatsapp", "WhatsApp number", "Digits with country code, e.g. 37494000000")}
-          {field("telegram", "Telegram username", "Without @, e.g. billions_motors")}
-          {field("email", "Email", undefined, "email")}
+          <legend className="px-2 text-sm font-semibold text-gold-mid">{t.phoneMessengers}</legend>
+          {field("phone", t.phone, t.phoneHint, "tel")}
+          {field("whatsapp", t.whatsapp, t.whatsappHint)}
+          {field("telegram", t.telegram, t.telegramHint)}
+          {field("email", t.email, undefined, "email")}
         </fieldset>
         <fieldset className="grid gap-4 rounded-[20px] border border-line bg-ink-2 p-5 sm:grid-cols-2 sm:p-6">
-          <legend className="px-2 text-sm font-semibold text-gold-mid">Showroom</legend>
-          {area("address_hy", "Address — Armenian")}
-          {area("hours_hy", "Opening hours — Armenian")}
-          {area("address_en", "Address — English")}
-          {area("hours_en", "Opening hours — English")}
-          {area("address_ru", "Address — Russian")}
-          {area("hours_ru", "Opening hours — Russian")}
-          <div className="sm:col-span-2">
-            {field("map_location", "Map location (shows the map on the contact page)",
-              "In Google Maps right-click the showroom, click the coordinates to copy them (e.g. 40.2231, 44.5315) and paste here. A full Google Maps link with the pin also works.")}
-          </div>
-          <div className="sm:col-span-2">{field("map_url", "Map link for the address (optional)", "Starts with https://. Empty = Google Maps at the location above.", "url")}</div>
+          <legend className="px-2 text-sm font-semibold text-gold-mid">{t.showroom}</legend>
+          {(["hy", "en", "ru"] as const).map((l) => (
+            <div key={l} className="contents">
+              {area(`address_${l}`, interpolate(t.addressIn, { lang: langs[l] }))}
+              {area(`hours_${l}`, interpolate(t.hoursIn, { lang: langs[l] }))}
+            </div>
+          ))}
+          <div className="sm:col-span-2">{field("map_location", t.mapLocation, t.mapLocationHint)}</div>
+          <div className="sm:col-span-2">{field("map_url", t.mapUrl, t.mapUrlHint, "url")}</div>
         </fieldset>
         <fieldset className="grid gap-4 rounded-[20px] border border-line bg-ink-2 p-5 sm:grid-cols-2 sm:p-6">
-          <legend className="px-2 text-sm font-semibold text-gold-mid">Social</legend>
-          {field("instagram", "Instagram page", "Full link, https://instagram.com/…", "url")}
-          {field("facebook", "Facebook page", "Full link, https://facebook.com/…", "url")}
+          <legend className="px-2 text-sm font-semibold text-gold-mid">{t.social}</legend>
+          {field("instagram", t.instagram, t.instagramHint, "url")}
+          {field("facebook", t.facebook, t.facebookHint, "url")}
         </fieldset>
-        <button type="submit" className="btn-gold self-start">Save contact info</button>
+        <button type="submit" className="btn-gold self-start">{t.save}</button>
       </form>
     </div>
   );

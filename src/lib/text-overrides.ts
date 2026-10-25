@@ -78,13 +78,24 @@ function setChild(parent: Json[] | { [k: string]: Json }, key: string, value: Js
 /** "{count}", "{q}": values the site fills in. An edited text must keep the same ones. */
 export const placeholders = (text: string) => [...new Set(text.match(/\{\w+\}/g) ?? [])].sort();
 
-export function checkPlaceholders(defaultText: string, edited: string): string | null {
+/** "{list}" in the messages is replaced with the placeholders concerned. */
+export type PlaceholderMessages = { keep: string; extra: string };
+const DEFAULT_PLACEHOLDER_MESSAGES: PlaceholderMessages = {
+  keep: "Keep {list} in the text — the site fills it in.",
+  extra: "{list} isn't filled in here — remove it.",
+};
+
+export function checkPlaceholders(
+  defaultText: string,
+  edited: string,
+  messages: PlaceholderMessages = DEFAULT_PLACEHOLDER_MESSAGES,
+): string | null {
   const need = placeholders(defaultText);
   const have = placeholders(edited);
   const missing = need.filter((p) => !have.includes(p));
   const extra = have.filter((p) => !need.includes(p));
-  if (missing.length) return `Keep ${missing.join(", ")} in the text — the site fills it in.`;
-  if (extra.length) return `${extra.join(", ")} isn't filled in here — remove it.`;
+  if (missing.length) return messages.keep.replace("{list}", missing.join(", "));
+  if (extra.length) return messages.extra.replace("{list}", extra.join(", "));
   return null;
 }
 

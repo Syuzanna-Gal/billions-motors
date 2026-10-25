@@ -20,6 +20,8 @@ export interface AdminUser {
   email: string;
   name: string | null;
   role: Role;
+  /** Admin panel language; null until chosen. */
+  lang: "hy" | "en" | null;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -68,8 +70,8 @@ export const getCurrentUser = cache(async (): Promise<AdminUser | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const db = await getDb();
-  const [row] = await db.query<{ id: number; email: string; name: string | null; role: Role }>(
-    `SELECT u.id, u.email, u.name, u.role FROM admin_sessions s
+  const [row] = await db.query<AdminUser>(
+    `SELECT u.id, u.email, u.name, u.role, u.lang FROM admin_sessions s
      JOIN admin_users u ON u.id = s.user_id
      WHERE s.id = $1 AND s.expires_at > now()`,
     [sha256(token)],

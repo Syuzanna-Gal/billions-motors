@@ -1,6 +1,8 @@
 import { getDb } from "../db";
 import type { AdminUser } from "../auth";
 import { carName } from "./cars";
+import { interpolate } from "../format";
+import type { AdminDict } from "./i18n";
 
 /* Recording sales: one click for the salesperson, stock goes down in the same transaction. */
 
@@ -49,7 +51,7 @@ export type SaleResult =
   | { ok: true; carName: string; stockLeft: number | null; tracked: boolean }
   | { ok: false; error: string };
 
-export async function recordSale(input: SaleInput, user: AdminUser): Promise<SaleResult> {
+export async function recordSale(input: SaleInput, user: AdminUser, t: AdminDict["sell"]): Promise<SaleResult> {
   const db = await getDb();
   return db.transaction(async (tx) => {
     // Lock the car row so two salespeople can't sell the last unit at the same time.
@@ -57,7 +59,7 @@ export async function recordSale(input: SaleInput, user: AdminUser): Promise<Sal
       "SELECT id, brand, model, trim_level, year, stock FROM vehicles WHERE id = $1 FOR UPDATE",
       [input.vehicleId],
     );
-    if (!car) return { ok: false, error: "This car no longer exists." };
+    if (!car) return { ok: false, error: t.carGone };
     const name = `${carName(car)} · ${car.year}`;
 
     let colorName: string | null = null;
@@ -68,13 +70,13 @@ export async function recordSale(input: SaleInput, user: AdminUser): Promise<Sal
          WHERE c.id = $1 AND c.vehicle_id = $2`,
         [input.colorId, car.id],
       );
-      if (!c) return { ok: false, error: "That colour doesn't belong to this car." };
+      if (!c) return { ok: false, error: t.colourWrong };
       colorName = c.name ?? c.hex;
     }
 
     const tracked = car.stock !== null;
     if (tracked && car.stock! < input.quantity) {
-      return { ok: false, error: `Only ${car.stock} left in stock for ${name}.` };
+      return { ok: false, error: interpolate(t.onlyLeft, { count: car.stock!, car: name }) };
     }
     if (tracked) await tx.query("UPDATE vehicles SET stock = stock - $1, updated_at = now() WHERE id = $2", [input.quantity, car.id]);
 
@@ -116,7 +118,7 @@ export async function listSales(user: AdminUser, limit = 30): Promise<SaleRow[]>
 }
 
 /** Undo a sale (mistake): puts the stock back. Sales people can undo only their own, within 24 hours. */
-export async function cancelSale(saleId: number, user: AdminUser): Promise<string | null> {
+export async function cancelSale(saleId: number, user: AdminUser, t: AdminDict["sell"]): Promise<string | null> {
   const db = await getDb();
   return db.transaction(async (tx) => {
     const [sale] = await tx.query<{ vehicle_id: number | null; quantity: number; stock_tracked: boolean; sold_by: number | null; cancelled_at: unknown; age_hours: number }>(
@@ -125,9 +127,9 @@ export async function cancelSale(saleId: number, user: AdminUser): Promise<strin
        FROM sales WHERE id = $1 FOR UPDATE`,
       [saleId],
     );
-    if (!sale || sale.cancelled_at) return "This sale was already undone.";
+    if (!sale || sale.cancelled_at) return t.alreadyUndone;
     if (user.role !== "FULL" && (sale.sold_by !== user.id || sale.age_hours > 24)) {
-      return "You can undo only your own sales from the last 24 hours. Ask an admin.";
+      return t.undoOwn;
     }
     if (sale.stock_tracked && sale.vehicle_id) {
       await tx.query("UPDATE vehicles SET stock = coalesce(stock, 0) + $1, updated_at = now() WHERE id = $2", [sale.quantity, sale.vehicle_id]);

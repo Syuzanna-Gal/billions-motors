@@ -1,44 +1,30 @@
 import { defaultDictionary, locales, type Locale } from "@/i18n";
 import { getDb } from "../db";
 import { checkPlaceholders, fieldLabel, fieldText, listFields, type TextField } from "../text-overrides";
+import { interpolate } from "../format";
+import type { AdminDict } from "./i18n";
 
 /* Admin → Site texts: every text of the public site, grouped the way the site is laid out. */
 
 export interface TextSection {
-  slug: string;
-  title: string;
-  description: string;
+  slug: keyof AdminDict["texts"]["sections"];
   /** Top-level dictionary keys in this section. */
   prefixes: string[];
   /** Page to open from the admin to see the result. */
   preview: string;
 }
 
+/** Laid out like the site. Titles and descriptions are in the admin dictionaries (lib/admin/i18n). */
 export const TEXT_SECTIONS: TextSection[] = [
-  { slug: "home", title: "Home page", preview: "", prefixes: ["home", "ticker"],
-    description: "Headline, intro, buttons, “How it works” steps, “Why us”, the closing call to action and the moving strip." },
-  { slug: "header-footer", title: "Header, menu & footer", preview: "", prefixes: ["nav", "footer", "meta"],
-    description: "Menu items, the Call button, footer texts and the site title and description shown in Google." },
-  { slug: "cars", title: "Cars list & search", preview: "/cars", prefixes: ["catalog", "search"],
-    description: "Catalogue title, filters, sorting, empty results and the search box." },
-  { slug: "car-page", title: "Car page", preview: "/cars", prefixes: ["car"],
-    description: "Buttons, photo tabs, colour pickers and the specification names." },
-  { slug: "info-pages", title: "Financing, Import, Warranty, About", preview: "/about", prefixes: ["pages"],
-    description: "Title, intro and paragraphs of each information page." },
-  { slug: "loan", title: "Loan calculator", preview: "/loan-calculator", prefixes: ["loan"],
-    description: "Field names, results and the note under the calculator." },
-  { slug: "contact", title: "Contact page & request forms", preview: "/contact", prefixes: ["contact", "form"],
-    description: "Contact page texts and every request form (labels, messages, contact options)." },
-  { slug: "labels", title: "Labels & units", preview: "/cars", prefixes: ["status", "fuel", "body", "drive", "units"],
-    description: "Availability, fuel, body and drive names, and units like km, hp, days." },
+  { slug: "home", preview: "", prefixes: ["home", "ticker"] },
+  { slug: "header-footer", preview: "", prefixes: ["nav", "footer", "meta"] },
+  { slug: "cars", preview: "/cars", prefixes: ["catalog", "search"] },
+  { slug: "car-page", preview: "/cars", prefixes: ["car"] },
+  { slug: "info-pages", preview: "/about", prefixes: ["pages"] },
+  { slug: "loan", preview: "/loan-calculator", prefixes: ["loan"] },
+  { slug: "contact", preview: "/contact", prefixes: ["contact", "form"] },
+  { slug: "labels", preview: "/cars", prefixes: ["status", "fuel", "body", "drive", "units"] },
 ];
-
-export const GROUP_TITLES: Record<string, string> = {
-  home: "Home page", ticker: "Moving strip under the headline", nav: "Menu", footer: "Footer",
-  meta: "Google title & description", catalog: "Cars list", search: "Search", car: "Car page", pages: "Pages",
-  loan: "Loan calculator", contact: "Contact page", form: "Request forms", status: "Availability",
-  fuel: "Fuel types", body: "Body types", drive: "Drive types", units: "Units",
-};
 
 export interface TextRow {
   field: TextField;
@@ -102,6 +88,7 @@ export async function saveSectionTexts(
   section: TextSection,
   form: FormData,
   editor: string,
+  t: AdminDict["texts"],
 ): Promise<{ saved: number; errors: Record<string, string> }> {
   const errors: Record<string, string> = {};
   const upserts: [string, Locale, string][] = [];
@@ -117,7 +104,9 @@ export async function saveSectionTexts(
         resets.push([field.key, l]);
         continue;
       }
-      const problem = value.length > MAX_LENGTH ? `Too long (max ${MAX_LENGTH} characters).` : checkPlaceholders(def, value);
+      const problem = value.length > MAX_LENGTH
+        ? interpolate(t.tooLong, { max: MAX_LENGTH })
+        : checkPlaceholders(def, value, { keep: t.keepPlaceholders, extra: t.extraPlaceholders });
       if (problem) errors[fieldName(field.key, l)] = problem;
       else upserts.push([field.key, l, value]);
     }

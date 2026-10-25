@@ -1,6 +1,7 @@
 import { locales, type Locale } from "@/i18n/config";
 import { getDb } from "../db";
 import { deleteImageFile } from "../media";
+import type { AdminDict } from "./i18n";
 import type { BodyType, DriveType, FuelType, VehicleStatus } from "../types";
 import { addDays, MAX_TRANSIT_DAYS, toIsoDate, today, transitDays } from "../transit";
 import { filterOptions } from "../vehicles";
@@ -152,25 +153,25 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
 
 export type FieldErrors = Partial<Record<string, string>>;
 
-export function parseCarForm(form: FormData): { data: CarFields; errors: FieldErrors } {
+export function parseCarForm(form: FormData, msg: AdminDict["carForm"]["errors"]): { data: CarFields; errors: FieldErrors } {
   const errors: FieldErrors = {};
   const text = (k: string, max = 200) => String(form.get(k) ?? "").trim().slice(0, max);
   const num = (k: string, opts: { required?: boolean; int?: boolean; min?: number; max?: number } = {}) => {
     const raw = text(k).replace(/[\s,]/g, "");
     if (!raw) {
-      if (opts.required) errors[k] = "Required";
+      if (opts.required) errors[k] = msg.required;
       return null;
     }
     const n = Number(raw);
     if (!Number.isFinite(n) || (opts.int && !Number.isInteger(n)) || (opts.min !== undefined && n < opts.min) || (opts.max !== undefined && n > opts.max)) {
-      errors[k] = "Invalid number";
+      errors[k] = msg.invalidNumber;
       return null;
     }
     return n;
   };
   const pick = <T extends string>(k: string, allowed: readonly T[]) => {
     const v = text(k) as T;
-    if (!allowed.includes(v)) errors[k] = "Choose a value";
+    if (!allowed.includes(v)) errors[k] = msg.chooseValue;
     return v;
   };
   const l10n = (prefix: string, max: number): L10n =>
@@ -178,14 +179,14 @@ export function parseCarForm(form: FormData): { data: CarFields; errors: FieldEr
 
   const httpsUrl = (k: string) => {
     const v = text(k, 500);
-    if (v && !/^https:\/\/\S+$/.test(v)) errors[k] = "Must start with https://";
+    if (v && !/^https:\/\/\S+$/.test(v)) errors[k] = msg.https;
     return v || null;
   };
 
   const brand = text("brand", 60);
   const model = text("model", 80);
-  if (!brand) errors.brand = "Required";
-  if (!model) errors.model = "Required";
+  if (!brand) errors.brand = msg.required;
+  if (!model) errors.model = msg.required;
   const stockMode = text("stock_mode");
 
   const data: CarFields = {
@@ -219,7 +220,7 @@ export function parseCarForm(form: FormData): { data: CarFields; errors: FieldEr
     transmission: l10n("transmission", 80),
     description: l10n("description", 4000),
   };
-  if (data.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(data.slug)) errors.slug = "Use only a-z, 0-9 and dashes";
+  if (data.slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(data.slug)) errors.slug = msg.slug;
   return { data, errors };
 }
 

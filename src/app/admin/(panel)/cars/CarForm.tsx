@@ -3,16 +3,29 @@
 import { useActionState, useState } from "react";
 import type { CarFields } from "@/lib/admin/cars";
 import { saveCarAction, type FormState } from "../../actions";
+import type { AdminDict } from "@/lib/admin/i18n";
 
-const STATUS = [["IN_STOCK", "In stock"], ["IN_TRANSIT", "In transit"], ["PRE_ORDER", "Pre-order"]] as const;
-const FUEL = [["ELECTRIC", "Electric"], ["EREV", "Range-extended hybrid"], ["PHEV", "Plug-in hybrid"], ["HYBRID", "Hybrid"], ["PETROL", "Petrol"]] as const;
-const BODY = [["SEDAN", "Sedan"], ["CROSSOVER", "Crossover"], ["SUV", "SUV"], ["HATCHBACK", "Hatchback"], ["WAGON", "Estate (wagon)"], ["MPV", "Minivan"], ["PICKUP", "Pickup"]] as const;
-const DRIVE = [["FWD", "Front-wheel"], ["RWD", "Rear-wheel"], ["AWD", "All-wheel"]] as const;
-const LANGS = [["hy", "Armenian"], ["en", "English"], ["ru", "Russian"]] as const;
+const STATUS = ["IN_STOCK", "IN_TRANSIT", "PRE_ORDER"] as const;
+const FUEL = ["ELECTRIC", "EREV", "PHEV", "HYBRID", "PETROL"] as const;
+const BODY = ["SEDAN", "CROSSOVER", "SUV", "HATCHBACK", "WAGON", "MPV", "PICKUP"] as const;
+const DRIVE = ["FWD", "RWD", "AWD"] as const;
+const LANG_CODES = ["hy", "en", "ru"] as const;
 
 type Initial = Partial<CarFields> & { id?: number };
 
-export function CarForm({ car }: { car?: Initial }) {
+/** Names for the choice lists, in the admin's language (taken from the site's own texts). */
+export type CarFormOptions = {
+  status: Record<(typeof STATUS)[number], string>;
+  fuel: Record<(typeof FUEL)[number], string>;
+  body: Record<(typeof BODY)[number], string>;
+  drive: Record<(typeof DRIVE)[number], string>;
+  langs: Record<(typeof LANG_CODES)[number], string>;
+  saving: string;
+};
+
+export function CarForm({ car, t, options }: { car?: Initial; t: AdminDict["carForm"]; options: CarFormOptions }) {
+  const opts = <K extends string>(keys: readonly K[], names: Record<K, string>) => keys.map((k) => [k, names[k]] as const);
+  const LANGS = LANG_CODES.map((l) => [l, options.langs[l]] as const);
   const [state, action, pending] = useActionState<FormState, FormData>(saveCarAction, undefined);
   const [tracked, setTracked] = useState(car?.stock !== null && car?.stock !== undefined);
   const err = state?.errors ?? {};
@@ -23,90 +36,89 @@ export function CarForm({ car }: { car?: Initial }) {
     <form action={action} className="flex flex-col gap-6">
       {car?.id && <input type="hidden" name="id" value={car.id} />}
 
-      <Section title="Basics">
-        <Field {...f} name="brand" label="Brand" required />
-        <Field {...f} name="model" label="Model" required />
-        <Field {...f} name="trim_level" label="Trim / version" hint="e.g. 4WD Ultra+" />
-        <Field {...f} name="year" label="Year" type="number" required />
-        <Select {...f} name="status" label="Availability" options={STATUS} />
-        <Field {...f} name="arrival_days" label="In transit: arrives in (days)" type="number"
-          hint="Counts down by one every day on the site and stops at 1 until the status is changed. Only used for “In transit”." />
-        <Select {...f} name="body_type" label="Body type" options={BODY} />
-        <Select {...f} name="fuel_type" label="Fuel" options={FUEL} />
-        <Select {...f} name="drive" label="Drive" options={DRIVE} />
+      <Section title={t.basics}>
+        <Field {...f} name="brand" label={t.brand} required />
+        <Field {...f} name="model" label={t.model} required />
+        <Field {...f} name="trim_level" label={t.trim} hint={t.trimHint} />
+        <Field {...f} name="year" label={t.year} type="number" required />
+        <Select {...f} name="status" label={t.availability} options={opts(STATUS, options.status)} />
+        <Field {...f} name="arrival_days" label={t.arrivalDays} type="number" hint={t.arrivalHint} />
+        <Select {...f} name="body_type" label={t.body} options={opts(BODY, options.body)} />
+        <Select {...f} name="fuel_type" label={t.fuel} options={opts(FUEL, options.fuel)} />
+        <Select {...f} name="drive" label={t.drive} options={opts(DRIVE, options.drive)} />
       </Section>
 
-      <Section title="Price and stock">
-        <Field {...f} name="price_amd" label="Price (AMD)" type="number" hint="Leave empty to show “Contact for price”" />
+      <Section title={t.priceStock}>
+        <Field {...f} name="price_amd" label={t.price} type="number" hint={t.priceHint} />
         <fieldset>
-          <legend className="label">Stock</legend>
+          <legend className="label">{t.stock}</legend>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
               <input type="radio" name="stock_mode" value="tracked" checked={tracked} onChange={() => setTracked(true)} className="accent-[#c9a66b]" />
-              Count units
+              {t.countUnits}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="radio" name="stock_mode" value="untracked" checked={!tracked} onChange={() => setTracked(false)} className="accent-[#c9a66b]" />
-              Not counted (pre-order)
+              {t.notCounted}
             </label>
           </div>
           {tracked && (
-            <input name="stock" type="number" min={0} defaultValue={value(car, "stock", values) || "1"} aria-label="Units in stock" className="field mt-3 max-w-32" />
+            <input name="stock" type="number" min={0} defaultValue={value(car, "stock", values) || "1"} aria-label={t.unitsInStock} className="field mt-3 max-w-32" />
           )}
           {err.stock && <p className="mt-1 text-xs text-[#f0a58f]">{err.stock}</p>}
         </fieldset>
         <label className="flex items-center gap-3 text-sm">
           <input type="checkbox" name="published" defaultChecked={values ? values.published === "on" : (car?.published ?? true)} className="size-5 accent-[#c9a66b]" />
-          Show on the site
+          {t.showOnSite}
         </label>
         <label className="flex items-center gap-3 text-sm">
           <input type="checkbox" name="featured" defaultChecked={values ? values.featured === "on" : (car?.featured ?? false)} className="size-5 accent-[#c9a66b]" />
-          Featured on the home page
+          {t.featuredHome}
         </label>
       </Section>
 
-      <Section title="Specifications">
-        <Field {...f} name="horsepower" label="Horsepower (hp)" type="number" required />
-        <Field {...f} name="ev_range_km" label="Electric range (km)" type="number" />
-        <Field {...f} name="battery_kwh" label="Battery (kWh)" type="number" />
-        <Field {...f} name="accel_0_100" label="0–100 km/h (seconds)" type="number" />
-        <Field {...f} name="top_speed_kmh" label="Top speed (km/h)" type="number" />
-        <Field {...f} name="seats" label="Seats" type="number" required />
-        <Field {...f} name="length_mm" label="Length (mm)" type="number" />
-        <Field {...f} name="width_mm" label="Width (mm)" type="number" />
-        <Field {...f} name="height_mm" label="Height (mm)" type="number" />
-        <Field {...f} name="warranty_years" label="Warranty (years)" type="number" required />
-        <Field {...f} name="warranty_km" label="Warranty (km)" type="number" required />
+      <Section title={t.specs}>
+        <Field {...f} name="horsepower" label={t.hp} type="number" required />
+        <Field {...f} name="ev_range_km" label={t.evRange} type="number" />
+        <Field {...f} name="battery_kwh" label={t.battery} type="number" />
+        <Field {...f} name="accel_0_100" label={t.accel} type="number" />
+        <Field {...f} name="top_speed_kmh" label={t.topSpeed} type="number" />
+        <Field {...f} name="seats" label={t.seats} type="number" required />
+        <Field {...f} name="length_mm" label={t.length} type="number" />
+        <Field {...f} name="width_mm" label={t.width} type="number" />
+        <Field {...f} name="height_mm" label={t.height} type="number" />
+        <Field {...f} name="warranty_years" label={t.warrantyYears} type="number" required />
+        <Field {...f} name="warranty_km" label={t.warrantyKm} type="number" required />
       </Section>
 
-      <Section title="Texts in each language">
+      <Section title={t.texts}>
         {LANGS.map(([l, name]) => (
           <div key={l} className="flex flex-col gap-3 rounded-2xl border border-line p-4 sm:col-span-2">
             <p className="text-sm font-semibold">{name}</p>
             <div>
-              <label htmlFor={`transmission_${l}`} className="label">Transmission</label>
+              <label htmlFor={`transmission_${l}`} className="label">{t.transmission}</label>
               <input id={`transmission_${l}`} name={`transmission_${l}`} defaultValue={typed(`transmission_${l}`, car?.transmission?.[l] ?? "")} className="field" />
             </div>
             <div>
-              <label htmlFor={`description_${l}`} className="label">Description (optional)</label>
+              <label htmlFor={`description_${l}`} className="label">{t.description}</label>
               <textarea id={`description_${l}`} name={`description_${l}`} defaultValue={typed(`description_${l}`, car?.description?.[l] ?? "")} className="field" />
             </div>
           </div>
         ))}
       </Section>
 
-      <Section title="Links (optional)">
-        <Field {...f} name="interior_360_url" label="360° interior view" type="url" wide hint="Shows a “360° interior” button on the car page." />
-        <Field {...f} name="video_url" label="Video (YouTube)" type="url" wide />
+      <Section title={t.links}>
+        <Field {...f} name="interior_360_url" label={t.view360} type="url" wide hint={t.view360Hint} />
+        <Field {...f} name="video_url" label={t.video} type="url" wide />
       </Section>
 
-      <Section title="Web address">
-        <Field {...f} name="slug" label="URL name" wide hint="Leave empty to create it from brand, model and year. Changing it breaks old links." />
+      <Section title={t.webAddress}>
+        <Field {...f} name="slug" label={t.slug} wide hint={t.slugHint} />
       </Section>
 
       <div className="sticky bottom-0 -mx-5 flex flex-wrap items-center gap-4 border-t border-line bg-ink/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8">
         <button type="submit" disabled={pending} className="btn-gold disabled:opacity-60">
-          {pending ? "Saving…" : car?.id ? "Save changes" : "Create car"}
+          {pending ? options.saving : car?.id ? t.saveChanges : t.create}
         </button>
         {state?.message && <p role="status" className="text-sm text-gold">{state.message}</p>}
         {state?.error && <p role="alert" className="text-sm text-[#f0a58f]">{state.error}</p>}
