@@ -88,7 +88,7 @@ export const hy: Dictionary = {
     },
   },
   ticker: ["Երաշխիք յուրաքանչյուր մեքենայի համար", "Ֆինանսավորում դրամով", "Մաքսազերծում և հաշվառում", "Թեստ-դրայվ Երևանում"],
-  units: { hp: "ձ.ու.", km: "կմ", mm: "մմ", sec: "վ", kmh: "կմ/ժ", kwh: "կՎտ·ժ", pcs: "հատ", pc: "հատ" },
+  units: { hp: "ձ.ու.", km: "կմ", mm: "մմ", sec: "վ", kmh: "կմ/ժ", kwh: "կՎտ·ժ", pcs: "հատ", pc: "հատ", days: { one: "օր", few: "օր", many: "օր", other: "օր" } },
   status: { IN_STOCK: "Առկա է", IN_TRANSIT: "Ճանապարհին", PRE_ORDER: "Նախնական պատվեր" },
   fuel: { ELECTRIC: "Էլեկտրական", EREV: "Հիբրիդ (վազքի ընդլայնիչով)", PHEV: "Plug-in հիբրիդ", HYBRID: "Հիբրիդ", PETROL: "Բենզին" },
   body: { SEDAN: "Սեդան", CROSSOVER: "Քրոսովեր", SUV: "Ամենագնաց", HATCHBACK: "Հեչբեք", WAGON: "Ունիվերսալ", MPV: "Մինիվեն", PICKUP: "Պիկապ" },

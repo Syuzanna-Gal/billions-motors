@@ -195,4 +195,12 @@ export const migrations: { id: string; sql: string }[] = [
       CREATE UNIQUE INDEX vehicle_images_one_cover_idx ON vehicle_images (vehicle_id) WHERE is_cover;
     `,
   },
+  {
+    id: "004_transit_countdown",
+    sql: /* sql */ `
+      -- When a car on the road is expected. The site shows the days left (never below 1)
+      -- while the car's status is IN_TRANSIT.
+      ALTER TABLE vehicles ADD COLUMN arrival_date date;
+    `,
+  },
 ];

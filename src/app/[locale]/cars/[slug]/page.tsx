@@ -79,7 +79,7 @@ export default async function CarPage({ params }: Props) {
 
         <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start" {...reveal(150)}>
           <div className="rounded-[24px] border border-line bg-ink-2 p-6 sm:p-7">
-            <StatusBadge status={car.status} stock={car.stock} t={t} />
+            <StatusBadge car={car} t={t} locale={locale} />
             <h1 className="mt-4 font-serif text-[40px] font-medium leading-[1.05]">{name}</h1>
             <p className="mt-2 text-sm text-mute">
               {car.year} · {t.fuel[car.fuelType]} · {t.body[car.bodyType]}

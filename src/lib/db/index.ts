@@ -71,6 +71,7 @@ async function connectPostgres(url: string): Promise<Db> {
   // Return bigint (price_amd) and numeric (battery, 0–100) as JS numbers instead of strings.
   types.setTypeParser(20, (v: string) => Number(v));
   types.setTypeParser(1700, (v: string) => Number(v));
+  types.setTypeParser(1082, (v: string) => v); // date → "YYYY-MM-DD", not a local-midnight Date
 
   let pool = new Pool({ connectionString: url, max: 10 });
   try {
@@ -131,6 +132,7 @@ async function connectPglite(): Promise<Db> {
     parsers: {
       [types.INT8]: (v: string) => Number(v),
       [types.NUMERIC]: (v: string) => Number(v),
+      [types.DATE]: (v: string) => v,
     },
   });
   await pg.waitReady;

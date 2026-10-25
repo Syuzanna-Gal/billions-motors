@@ -29,6 +29,8 @@ export function CarForm({ car }: { car?: Initial }) {
         <Field {...f} name="trim_level" label="Trim / version" hint="e.g. 4WD Ultra+" />
         <Field {...f} name="year" label="Year" type="number" required />
         <Select {...f} name="status" label="Availability" options={STATUS} />
+        <Field {...f} name="arrival_days" label="In transit: arrives in (days)" type="number"
+          hint="Counts down by one every day on the site and stops at 1 until the status is changed. Only used for “In transit”." />
         <Select {...f} name="body_type" label="Body type" options={BODY} />
         <Select {...f} name="fuel_type" label="Fuel" options={FUEL} />
         <Select {...f} name="drive" label="Drive" options={DRIVE} />

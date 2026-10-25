@@ -2,6 +2,7 @@ import { locales, type Locale } from "@/i18n/config";
 import { getDb } from "../db";
 import { deleteImageFile } from "../media";
 import type { BodyType, DriveType, FuelType, VehicleStatus } from "../types";
+import { addDays, MAX_TRANSIT_DAYS, toIsoDate, today, transitDays } from "../transit";
 import { filterOptions } from "../vehicles";
 
 /* Everything the admin needs to list, edit, create and delete cars. */
@@ -31,6 +32,8 @@ export interface CarFields {
   warranty_km: number;
   price_amd: number | null;
   stock: number | null;
+  /** Days until arrival, for cars in transit. Stored as a date, so it counts down by itself. */
+  arrival_days: number | null;
   featured: boolean;
   published: boolean;
   interior_360_url: string | null;
@@ -76,6 +79,7 @@ export interface CarListItem {
   status: VehicleStatus;
   stock: number | null;
   price_amd: number | null;
+  arrival_date: string | null;
   published: boolean;
   featured: boolean;
   photos: number;
@@ -88,16 +92,16 @@ export const carName = (r: { brand: string; model: string; trim_level: string | 
 export async function listCarsAdmin(): Promise<CarListItem[]> {
   const db = await getDb();
   const rows = await db.query<Omit<CarListItem, "name">>(
-    `SELECT v.id, v.slug, v.brand, v.model, v.trim_level, v.year, v.status, v.stock, v.price_amd, v.published, v.featured,
+    `SELECT v.id, v.slug, v.brand, v.model, v.trim_level, v.year, v.status, v.stock, v.price_amd, v.arrival_date, v.published, v.featured,
             (SELECT count(*)::int FROM vehicle_images i WHERE i.vehicle_id = v.id) AS photos
      FROM vehicles v ORDER BY v.brand, v.model, v.year DESC, v.id`,
   );
-  return rows.map((r) => ({ ...r, name: carName(r) }));
+  return rows.map((r) => ({ ...r, arrival_date: toIsoDate(r.arrival_date), name: carName(r) }));
 }
 
 export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
   const db = await getDb();
-  const [v] = await db.query<Omit<CarFields, "transmission" | "description"> & { id: number }>(
+  const [v] = await db.query<Omit<CarFields, "transmission" | "description" | "arrival_days"> & { id: number; arrival_date: string | Date | null }>(
     "SELECT * FROM vehicles WHERE id = $1",
     [id],
   );
@@ -131,6 +135,7 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
   }
   return {
     ...v,
+    arrival_days: transitDays(v.status, v.arrival_date),
     transmission,
     description,
     colors: colors.map((c) => {
@@ -206,6 +211,7 @@ export function parseCarForm(form: FormData): { data: CarFields; errors: FieldEr
     warranty_km: num("warranty_km", { required: true, int: true, min: 0, max: 1_000_000 }) ?? 100000,
     price_amd: num("price_amd", { int: true, min: 1 }),
     stock: stockMode === "untracked" ? null : (num("stock", { required: true, int: true, min: 0, max: 999 }) ?? 0),
+    arrival_days: num("arrival_days", { int: true, min: 1, max: MAX_TRANSIT_DAYS }),
     featured: form.get("featured") === "on",
     published: form.get("published") === "on",
     interior_360_url: httpsUrl("interior_360_url"),
@@ -247,17 +253,19 @@ const COLUMNS = [
 export async function saveCar(data: CarFields, id?: number): Promise<number> {
   const db = await getDb();
   data.slug = await uniqueSlug(data.slug || slugify(`${data.brand} ${data.model} ${data.trim_level ?? ""} ${data.year}`), id);
-  const values = COLUMNS.map((c) => data[c]);
+  // The countdown is stored as a date (only for cars in transit), so the site can count down daily.
+  const arrivalDate = data.status === "IN_TRANSIT" && data.arrival_days ? addDays(today(), data.arrival_days) : null;
+  const values = [...COLUMNS.map((c) => data[c]), arrivalDate];
 
   return db.transaction(async (tx) => {
     let vehicleId = id;
     if (vehicleId) {
-      const sets = COLUMNS.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      await tx.query(`UPDATE vehicles SET ${sets}, updated_at = now() WHERE id = $${COLUMNS.length + 1}`, [...values, vehicleId]);
+      const sets = [...COLUMNS, "arrival_date"].map((c, i) => `${c} = $${i + 1}`).join(", ");
+      await tx.query(`UPDATE vehicles SET ${sets}, updated_at = now() WHERE id = $${COLUMNS.length + 2}`, [...values, vehicleId]);
     } else {
-      const placeholders = COLUMNS.map((_, i) => `$${i + 1}`).join(", ");
+      const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
       const [row] = await tx.query<{ id: number }>(
-        `INSERT INTO vehicles (${COLUMNS.join(", ")}) VALUES (${placeholders}) RETURNING id`,
+        `INSERT INTO vehicles (${COLUMNS.join(", ")}, arrival_date) VALUES (${placeholders}) RETURNING id`,
         values,
       );
       vehicleId = row.id;

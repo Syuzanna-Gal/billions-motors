@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listCarsAdmin } from "@/lib/admin/cars";
 import { rankCars } from "@/lib/search";
+import { daysLeft, today } from "@/lib/transit";
 import { setStockAction, togglePublishedAction } from "../../actions";
 
 export const metadata = { title: "Cars" };
@@ -88,7 +89,17 @@ export default async function CarsPage({ searchParams }: Props) {
                   <Link href={`/admin/cars/${c.id}`} className="font-medium text-ivory hover:text-gold">{c.name}</Link>
                   {c.featured && <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 text-[11px] text-gold">Featured</span>}
                 </td>
-                <td className="p-4 text-mute">{statusLabel[c.status]}</td>
+                <td className="p-4 text-mute">
+                  {statusLabel[c.status]}
+                  {c.status === "IN_TRANSIT" && c.arrival_date && (
+                    // Due (arrival date reached): the site keeps showing "1 day" until the status changes.
+                    c.arrival_date <= today() ? (
+                      <span className="block text-xs text-[#f0a58f]">Due · update status</span>
+                    ) : (
+                      <span className="block text-xs text-mute-2">{daysLeft(c.arrival_date)} days left</span>
+                    )
+                  )}
+                </td>
                 <td className="p-4">
                   <form action={setStockAction} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={c.id} />

@@ -51,6 +51,8 @@ export interface Vehicle {
   priceAmd: number | null;
   /** Cars left; null = not counted (pre-order / in transit). */
   stock: number | null;
+  /** Days until a car on the road arrives (never below 1); null if not in transit or no date set. */
+  arrivalDays: number | null;
   featured: boolean;
   /** Photo for catalogue cards: the chosen cover, else the first exterior photo. */
   cover: VehicleImage | null;

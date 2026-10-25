@@ -12,7 +12,7 @@ export function CarCard({ car, locale, t }: { car: Vehicle; locale: Locale; t: D
     <article className="group relative flex w-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-ink-2 transition-[transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-[0_24px_60px_-30px_rgb(230_207_158/0.35)]">
       <div className="relative aspect-[16/10] overflow-hidden">
         <CarPhoto image={car.cover ?? undefined} alt={name} placeholder={t.car.photo} className="transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]" />
-        <StatusBadge status={car.status} stock={car.stock} t={t} className="absolute left-4 top-4" />
+        <StatusBadge car={car} t={t} locale={locale} className="absolute left-4 top-4" />
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
         <div>
