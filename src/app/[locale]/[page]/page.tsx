@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale, locales, type Dictionary } from "@/i18n";
+import { isLocale, locales, type Dictionary } from "@/i18n";
 import { PageHeader } from "@/components/PageHeader";
 import { reveal } from "@/lib/reveal";
 
@@ -21,14 +22,14 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, page } = await params;
   if (!isLocale(locale) || !isPageKey(page)) return {};
-  const content = getDictionary(locale).pages[page];
+  const content = (await getDictionary(locale)).pages[page];
   return { title: content.title, description: content.lead };
 }
 
 export default async function ContentPage({ params }: Props) {
   const { locale, page } = await params;
   if (!isLocale(locale) || !isPageKey(page)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const content = t.pages[page];
   const numbered = page === "import-process";
 

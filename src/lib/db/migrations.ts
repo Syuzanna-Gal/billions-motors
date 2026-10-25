@@ -203,4 +203,19 @@ export const migrations: { id: string; sql: string }[] = [
       ALTER TABLE vehicles ADD COLUMN arrival_date date;
     `,
   },
+  {
+    id: "005_site_texts",
+    sql: /* sql */ `
+      -- Site texts edited in the admin. Only changed texts are stored; the rest come from the
+      -- built-in language files. key = dotted path into the dictionary, e.g. "home.titleStart".
+      CREATE TABLE site_texts (
+        key         text NOT NULL,
+        locale      text NOT NULL CHECK (locale IN ('hy', 'en', 'ru')),
+        value       text NOT NULL,
+        updated_at  timestamptz NOT NULL DEFAULT now(),
+        updated_by  text,
+        PRIMARY KEY (key, locale)
+      );
+    `,
+  },
 ];

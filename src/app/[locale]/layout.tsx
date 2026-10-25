@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import { notFound } from "next/navigation";
 import "@fontsource/cormorant-garamond/500.css";
 import "@fontsource/cormorant-garamond/500-italic.css";
@@ -7,7 +8,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/noto-sans-armenian";
 import "@fontsource-variable/noto-serif-armenian";
 import "../globals.css";
-import { getDictionary, isLocale, languageAlternates, localeTags, locales } from "@/i18n";
+import { isLocale, languageAlternates, localeTags, locales } from "@/i18n";
 import { site } from "@/lib/site";
 import { getContact } from "@/lib/settings";
 import { Header } from "@/components/Header";
@@ -22,6 +23,9 @@ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isInter
 els.forEach(function(e){io.observe(e)});
 }catch(e){}})();`;
 
+// Texts, contact info and cars are edited in the admin: render every page fresh.
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
@@ -31,7 +35,7 @@ export const viewport: Viewport = { themeColor: "#0b0b0c" };
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   return {
     metadataBase: new URL(site.url),
     title: { default: t.meta.title, template: "%s | Billions Motors" },
@@ -51,7 +55,7 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const contact = await getContact(locale);
 
   return (

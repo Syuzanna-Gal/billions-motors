@@ -5,7 +5,11 @@ import type { Locale } from "./config";
 
 const dictionaries: Record<Locale, Dictionary> = { en, hy, ru };
 
-export function getDictionary(locale: Locale): Dictionary {
+/**
+ * The built-in texts. Pages use getDictionary() from "@/lib/dictionary", which applies the
+ * texts edited in the admin on top of these.
+ */
+export function defaultDictionary(locale: Locale): Dictionary {
   return dictionaries[locale];
 }
 

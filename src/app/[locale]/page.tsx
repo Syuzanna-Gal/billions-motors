@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/dictionary";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale } from "@/i18n";
+import { isLocale } from "@/i18n";
 import { getFeatured, listVehicles } from "@/lib/vehicles";
 import { vehicleName } from "@/lib/format";
 import { getContact } from "@/lib/settings";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
 
   const [[hero], collection, contact] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, { limit: 8, offset: 0 }).then((r) => r.cars), getContact(locale)]);
 

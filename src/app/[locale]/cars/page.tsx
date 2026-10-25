@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale, languageAlternates, type Dictionary, type Locale } from "@/i18n";
+import { isLocale, languageAlternates, type Dictionary, type Locale } from "@/i18n";
 import { filterOptions, getBrands, listVehicles, parseFilters, searchVehicles } from "@/lib/vehicles";
 import type { Vehicle } from "@/lib/types";
 import { interpolate } from "@/lib/format";
@@ -17,7 +18,7 @@ type Props = {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const { q } = parseFilters(await searchParams);
   return {
     title: q ? `${interpolate(t.search.resultsFor, { q })} · ${t.nav.cars}` : t.nav.cars,
@@ -31,7 +32,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function CatalogPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const rawParams = await searchParams;
   const filters = parseFilters(rawParams);
   const { q } = filters;

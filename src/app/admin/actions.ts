@@ -14,6 +14,7 @@ import {
 import { cancelSale, recordSale, type SaleResult } from "@/lib/admin/sales";
 import { createUser, deleteUser, PASSWORD_MIN, setPassword, updateUser, validEmail } from "@/lib/admin/users";
 import { LEAD_STATUSES, setLeadStatus, type LeadStatus } from "@/lib/admin/leads";
+import { saveSectionTexts, sectionBySlug } from "@/lib/admin/texts";
 import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/lib/settings";
 import { saveImage, UploadError } from "@/lib/media";
 
@@ -304,4 +305,21 @@ export async function setLeadStatusAction(form: FormData) {
   if (!LEAD_STATUSES.includes(status)) back("/admin/leads", "Unknown status.", "err");
   await setLeadStatus(int(form, "id"), status);
   revalidatePath("/admin/leads");
+}
+
+/* ---------- Site texts (Full only) ---------- */
+
+export type TextsState = { message?: string; error?: string; errors?: Record<string, string> } | undefined;
+
+export async function saveTextsAction(_: TextsState, form: FormData): Promise<TextsState> {
+  const user = await requireUser("FULL");
+  const section = sectionBySlug(str(form, "section"));
+  if (!section) return { error: "Unknown section." };
+  const { saved, errors } = await saveSectionTexts(section, form, user.name || user.email);
+  if (Object.keys(errors).length) {
+    return { error: "Some texts need fixing — see the red notes below. Nothing was saved yet.", errors };
+  }
+  refreshSite();
+  revalidatePath("/admin/texts");
+  return { message: saved ? "Saved. The site shows the new texts now." : "Saved. All texts in this section use the defaults." };
 }

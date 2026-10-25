@@ -18,6 +18,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           { href: "/admin/cars", label: "Cars" },
           { href: "/admin/leads", label: newLeads ? `Requests (${newLeads} new)` : "Requests" },
           { href: "/admin/contact", label: "Contact info" },
+          { href: "/admin/texts", label: "Site texts" },
           { href: "/admin/users", label: "Users" },
         ]
       : []),

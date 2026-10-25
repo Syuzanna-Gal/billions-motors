@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale } from "@/i18n";
+import { isLocale } from "@/i18n";
 import { getContact } from "@/lib/settings";
 import { LeadForm } from "@/components/LeadForm";
 import { PageHeader } from "@/components/PageHeader";
@@ -11,14 +12,14 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   return { title: t.contact.title, description: t.contact.lead };
 }
 
 export default async function ContactPage({ params }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const contact = await getContact(locale);
 
   const items: { label: string; value: string; href?: string }[] = [

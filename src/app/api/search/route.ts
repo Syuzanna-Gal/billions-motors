@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getDictionary, isLocale } from "@/i18n";
+import { getDictionary } from "@/lib/dictionary";
+import { isLocale } from "@/i18n";
 import { formatAmd, vehicleName } from "@/lib/format";
 import { MAX_QUERY_LENGTH, MIN_QUERY_LENGTH } from "@/lib/search";
 import { searchVehicles } from "@/lib/vehicles";
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
   if (query.length < MIN_QUERY_LENGTH) return json({ query, suggestions: [], total: 0 });
 
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const { matches, similar, total } = await searchVehicles(locale, { q: query }, { limit: LIMIT, similarLimit: LIMIT });
   const items = [...matches.map((car) => ({ car, similar: false })), ...similar.map((car) => ({ car, similar: true }))];
 

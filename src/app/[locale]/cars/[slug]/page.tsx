@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale, languageAlternates, type Dictionary, type Locale } from "@/i18n";
+import { isLocale, languageAlternates, type Dictionary, type Locale } from "@/i18n";
 import { getSimilar, getVehicle } from "@/lib/vehicles";
 import { formatAmd, formatNumber, vehicleName } from "@/lib/format";
 import { calculateLoan } from "@/lib/loan";
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const car = await getVehicle(slug, locale);
   if (!car) return {};
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const name = vehicleName(car);
   return {
     title: `${name} ${car.year}`,
@@ -41,7 +42,7 @@ export default async function CarPage({ params }: Props) {
   if (!isLocale(locale)) notFound();
   const car = await getVehicle(slug, locale);
   if (!car) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const name = vehicleName(car);
   const [similar, contact] = await Promise.all([getSimilar(car, locale), getContact(locale)]);
 

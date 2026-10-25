@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { getDictionary } from "@/lib/dictionary";
 import { notFound } from "next/navigation";
-import { getDictionary, isLocale } from "@/i18n";
+import { isLocale } from "@/i18n";
 import { LoanCalculator } from "@/components/LoanCalculator";
 import { LeadForm } from "@/components/LeadForm";
 import { PageHeader } from "@/components/PageHeader";
@@ -13,14 +14,14 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   return { title: t.loan.title, description: t.loan.lead };
 }
 
 export default async function LoanPage({ params, searchParams }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const t = getDictionary(locale);
+  const t = await getDictionary(locale);
   const priceParam = (await searchParams).price;
   const price = typeof priceParam === "string" ? Number(priceParam) : NaN;
 
