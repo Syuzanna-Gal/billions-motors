@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import type { SellableCar, SaleResult } from "@/lib/admin/sales";
 import { sellAction } from "../../actions";
 import type { AdminDict } from "@/lib/admin/i18n";
@@ -16,17 +16,25 @@ export function SellForm({
   const [paintId, setPaintId] = useState<number | null>(null);
   const [trimId, setTrimId] = useState<number | null>(null);
   const [formKey, setFormKey] = useState(0);
-  const [state, action, pending] = useActionState<SaleResult | undefined, FormData>(async (prev, form) => {
-    const result = await sellAction(prev, form);
-    // After a sale start from an empty form, so a second click can't sell a different car by mistake.
-    if (result?.ok) {
-      setCarId("");
-      setPaintId(null);
-      setTrimId(null);
-      setFormKey((k) => k + 1);
-    }
-    return result;
-  }, undefined);
+  const [state, setState] = useState<SaleResult>();
+  const [pending, startTransition] = useTransition();
+  // Submitted by hand (not <form action>): React would otherwise reset the form after every
+  // attempt, emptying the car choice after an error while the screen still shows the car.
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(async () => {
+      const result = await sellAction(undefined, data);
+      setState(result);
+      // After a sale start from an empty form, so a second click can't sell a different car by mistake.
+      if (result.ok) {
+        setCarId("");
+        setPaintId(null);
+        setTrimId(null);
+        setFormKey((k) => k + 1);
+      }
+    });
+  };
   const car = cars.find((c) => String(c.id) === carId);
   const byColour = !!car && car.combos.length > 0;
   const needsTrim = byColour && car.interiors.length > 0;
@@ -83,7 +91,7 @@ export function SellForm({
         <p role="alert" className="rounded-2xl border border-[#f0a58f]/50 bg-[#f0a58f]/10 p-4 text-sm text-[#f6c4b4]">{state.error}</p>
       )}
 
-      <form key={formKey} action={action} className="flex flex-col gap-5 rounded-[24px] border border-line bg-ink-2 p-5 sm:p-7">
+      <form key={formKey} onSubmit={onSubmit} className="flex flex-col gap-5 rounded-[24px] border border-line bg-ink-2 p-5 sm:p-7">
         <div>
           <label htmlFor="vehicle_id" className="label">{t.which}</label>
           <select id="vehicle_id" name="vehicle_id" required value={carId} onChange={(e) => chooseCar(e.target.value)} className="field text-base">

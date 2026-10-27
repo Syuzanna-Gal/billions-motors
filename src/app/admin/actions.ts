@@ -20,6 +20,7 @@ import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/l
 import { saveImage, UploadError } from "@/lib/media";
 import { interpolate } from "@/lib/format";
 import { parseStockGrid } from "@/lib/colour-stock";
+import type { SaveResult } from "./_components/KeepValuesForm";
 import { cookies } from "next/headers";
 import { ADMIN_LANG_COOKIE, adminT } from "@/lib/admin/lang";
 import { isAdminLang } from "@/lib/admin/i18n";
@@ -30,14 +31,21 @@ import { isAdminLang } from "@/lib/admin/i18n";
  */
 
 const str = (f: FormData, k: string, max = 200) => String(f.get(k) ?? "").trim().slice(0, max);
+/** A whole number from the form; NaN when missing or not a whole number (an empty field is not 0). */
 const int = (f: FormData, k: string) => {
-  const n = Number(str(f, k));
-  return Number.isInteger(n) ? n : NaN;
+  const raw = str(f, k);
+  const n = Number(raw);
+  return raw !== "" && Number.isInteger(n) ? n : NaN;
 };
-/** Redirects with a message (?ok= / ?err=). The message goes before any #section, or the page wouldn't see it. */
+/**
+ * Redirects with a message (?ok= / ?err=). A "#section" in the path becomes ?at=section: redirects
+ * from actions drop the #, so <Flash> scrolls back to that section itself.
+ */
 const back = (path: string, msg: string, kind: "ok" | "err" = "ok"): never => {
-  const [base, hash] = path.split("#");
-  return redirect(`${base}${base.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}${hash ? `#${hash}` : ""}`);
+  const [base, section] = path.split("#");
+  const params = new URLSearchParams({ [kind]: msg });
+  if (section) params.set("at", section);
+  return redirect(`${base}${base.includes("?") ? "&" : "?"}${params}`);
 };
 
 /** Car pages on the public site are rendered per request; this clears any router cache too. */
@@ -57,13 +65,17 @@ export async function loginAction(_: FormState, form: FormData): Promise<FormSta
   if (loginBlocked(email)) return { error: t.auth.tooMany };
 
   const db = await getDb();
-  const [user] = await db.query<{ id: number; password_hash: string }>("SELECT id, password_hash FROM admin_users WHERE email = $1", [email]);
+  const [user] = await db.query<{ id: number; role: Role; password_hash: string }>(
+    "SELECT id, role, password_hash FROM admin_users WHERE email = $1",
+    [email],
+  );
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     recordLoginFailure(email);
     return { error: t.auth.wrong };
   }
   await startSession(user.id);
-  redirect("/admin");
+  // Straight to the user's start page: a redirect to /admin, which redirects again, could leave a blank page.
+  redirect(user.role === "FULL" ? "/admin/cars" : "/admin/sell");
 }
 
 export async function logoutAction() {
@@ -86,7 +98,7 @@ export async function setupAction(_: FormState, form: FormData): Promise<FormSta
     [email, name || null, await hashPassword(password)],
   );
   await startSession(id);
-  redirect("/admin");
+  redirect("/admin/cars"); // the first user is Full
 }
 
 /* ---------- Sales ---------- */
@@ -290,20 +302,20 @@ export async function saveRelatedAction(form: FormData) {
 
 /* ---------- Contact info (Full only) ---------- */
 
-export async function saveSettingsAction(form: FormData) {
+export async function saveSettingsAction(form: FormData): Promise<SaveResult> {
   await requireUser("FULL");
   const values: Partial<Settings> = {};
   for (const key of SETTING_KEYS) values[key] = str(form, key, 500);
   const t = (await adminT()).contact;
   const fieldNames = { instagram: t.instagram, facebook: t.facebook, map_url: t.mapUrl };
   for (const k of ["instagram", "facebook", "map_url"] as const) {
-    if (values[k] && !/^https:\/\//.test(values[k]!)) back("/admin/contact", interpolate(t.mustHttps, { field: fieldNames[k] }), "err");
+    if (values[k] && !/^https:\/\//.test(values[k]!)) return { error: interpolate(t.mustHttps, { field: fieldNames[k] }) };
   }
-  if (values.email && !validEmail(values.email)) back("/admin/contact", t.badEmail, "err");
-  if (values.map_location && !parseMapLocation(values.map_location)) back("/admin/contact", t.badMap, "err");
+  if (values.email && !validEmail(values.email)) return { error: t.badEmail };
+  if (values.map_location && !parseMapLocation(values.map_location)) return { error: t.badMap };
   await saveSettings(values);
   refreshSite();
-  back("/admin/contact", t.saved);
+  return { ok: t.saved };
 }
 
 /* ---------- Users (Full only) ---------- */

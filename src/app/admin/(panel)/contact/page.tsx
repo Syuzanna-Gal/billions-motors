@@ -3,6 +3,7 @@ import { getSettings } from "@/lib/settings";
 import { saveSettingsAction } from "../../actions";
 import { adminT } from "@/lib/admin/lang";
 import { interpolate } from "@/lib/format";
+import { KeepValuesForm } from "../../_components/KeepValuesForm";
 
 export async function generateMetadata() {
   return { title: (await adminT()).contact.title };
@@ -34,7 +35,7 @@ export default async function ContactSettingsPage() {
         <h1 className="font-serif text-4xl font-medium">{t.title}</h1>
         <p className="mt-2 text-mute">{t.lead}</p>
       </header>
-      <form action={saveSettingsAction} className="flex flex-col gap-6">
+      <KeepValuesForm action={saveSettingsAction} submit={t.save} saving={all.common.saving} className="flex flex-col gap-6">
         <fieldset className="grid gap-4 rounded-[20px] border border-line bg-ink-2 p-5 sm:grid-cols-2 sm:p-6">
           <legend className="px-2 text-sm font-semibold text-gold-mid">{t.phoneMessengers}</legend>
           {field("phone", t.phone, t.phoneHint, "tel")}
@@ -58,8 +59,7 @@ export default async function ContactSettingsPage() {
           {field("instagram", t.instagram, t.instagramHint, "url")}
           {field("facebook", t.facebook, t.facebookHint, "url")}
         </fieldset>
-        <button type="submit" className="btn-gold self-start">{t.save}</button>
-      </form>
+      </KeepValuesForm>
     </div>
   );
 }

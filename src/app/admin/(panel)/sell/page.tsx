@@ -14,8 +14,9 @@ export async function generateMetadata() {
 const when = (d: Date | string, lang: AdminLang) =>
   new Date(d).toLocaleString(adminIntl[lang], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Yerevan" });
 
-export default async function SellPage() {
+export default async function SellPage({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
   const user = await requireUser();
+  const { ok, err } = await searchParams;
   const [cars, sales, t, lang] = await Promise.all([listSellableCars(), listSales(user), adminT(), getAdminLang()]);
 
   return (
@@ -25,7 +26,8 @@ export default async function SellPage() {
         <p className="mt-2 text-mute">{t.sell.lead}</p>
       </header>
 
-      <SellForm cars={cars} t={t.sell} statusLabels={defaultDictionary(lang).status} saving={t.common.saving} />
+      {/* New key after an undo: the form starts clean instead of still showing the undone sale. */}
+      <SellForm key={`${ok ?? ""}|${err ?? ""}`} cars={cars} t={t.sell} statusLabels={defaultDictionary(lang).status} saving={t.common.saving} />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">{user.role === "FULL" ? t.sell.recentAll : t.sell.recentMine}</h2>

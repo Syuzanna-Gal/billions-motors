@@ -11,7 +11,8 @@ export async function generateMetadata() {
 
 export default async function LoginPage() {
   if ((await countUsers()) === 0) redirect("/admin/setup");
-  if (await getCurrentUser()) redirect("/admin");
+  const user = await getCurrentUser();
+  if (user) redirect(user.role === "FULL" ? "/admin/cars" : "/admin/sell");
   const t = await adminT();
   return (
     <main className="flex min-h-dvh items-center justify-center p-5">

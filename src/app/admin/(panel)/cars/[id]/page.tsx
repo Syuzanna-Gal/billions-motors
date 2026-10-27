@@ -52,7 +52,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
         <p className="mt-1 text-sm text-mute">{te.coloursHelp}</p>
         <div className="mt-4 flex flex-col gap-3">
           {car.colors.map((c) => (
-            <form key={`${c.id}-${c.kind}`} action={updateColorAction} className="grid items-end gap-3 rounded-2xl border border-line bg-ink-2 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_5rem_auto]">
+            <form key={`${c.id}-${c.kind}`} action={updateColorAction} className="grid grid-cols-2 items-end gap-3 rounded-2xl border border-line bg-ink-2 p-4 sm:grid-cols-3 xl:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_5rem_auto]">
               <input type="hidden" name="vehicle_id" value={car.id} />
               <input type="hidden" name="color_id" value={c.id} />
               <div>
@@ -80,7 +80,7 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
               </div>
             </form>
           ))}
-          <form action={addColorAction} className="grid items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_auto]">
+          <form action={addColorAction} className="grid grid-cols-2 items-end gap-3 rounded-2xl border border-dashed border-gold/30 p-4 sm:grid-cols-3 xl:grid-cols-[auto_7.5rem_repeat(3,minmax(0,1fr))_auto]">
             <input type="hidden" name="vehicle_id" value={car.id} />
             <div>
               <label className="label" htmlFor="new-hex">{t.common.colour}</label>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import type { CarFields } from "@/lib/admin/cars";
 import { saveCarAction, type FormState } from "../../actions";
 import type { AdminDict } from "@/lib/admin/i18n";
@@ -31,6 +31,16 @@ export function CarForm({
   const LANGS = LANG_CODES.map((l) => [l, options.langs[l]] as const);
   const [state, action, pending] = useActionState<FormState, FormData>(saveCarAction, undefined);
   const [tracked, setTracked] = useState(car?.stock !== null && car?.stock !== undefined);
+  // A new result replaces any message from the page's URL (e.g. "Car created" after the first save).
+  useEffect(() => {
+    if (!state) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("ok") && !url.searchParams.has("err")) return;
+    url.searchParams.delete("ok");
+    url.searchParams.delete("err");
+    url.searchParams.delete("at");
+    window.history.replaceState(null, "", url);
+  }, [state]);
   const err = state?.errors ?? {};
   const values = state?.values;
   const f = { car, err, values };
