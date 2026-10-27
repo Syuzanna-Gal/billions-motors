@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import type { CarFields } from "@/lib/admin/cars";
 import { saveCarAction, type FormState } from "../../actions";
 import type { AdminDict } from "@/lib/admin/i18n";
+import { interpolate } from "@/lib/format";
 
 const STATUS = ["IN_STOCK", "IN_TRANSIT", "PRE_ORDER"] as const;
 const FUEL = ["ELECTRIC", "EREV", "PHEV", "HYBRID", "PETROL"] as const;
@@ -23,7 +24,9 @@ export type CarFormOptions = {
   saving: string;
 };
 
-export function CarForm({ car, t, options }: { car?: Initial; t: AdminDict["carForm"]; options: CarFormOptions }) {
+export function CarForm({
+  car, t, options, stockFromColours = null,
+}: { car?: Initial; t: AdminDict["carForm"]; options: CarFormOptions; stockFromColours?: number | null }) {
   const opts = <K extends string>(keys: readonly K[], names: Record<K, string>) => keys.map((k) => [k, names[k]] as const);
   const LANGS = LANG_CODES.map((l) => [l, options.langs[l]] as const);
   const [state, action, pending] = useActionState<FormState, FormData>(saveCarAction, undefined);
@@ -50,6 +53,16 @@ export function CarForm({ car, t, options }: { car?: Initial; t: AdminDict["carF
 
       <Section title={t.priceStock}>
         <Field {...f} name="price_amd" label={t.price} type="number" hint={t.priceHint} />
+        {stockFromColours !== null ? (
+          <div>
+            {/* The total comes from the colours; the server recalculates it on save. */}
+            <input type="hidden" name="stock_mode" value="colours" />
+            <p className="label">{t.stock}</p>
+            <p className="text-sm text-mute">
+              <a href="#stock" className="text-gold hover:text-ivory">{interpolate(t.stockFromColours, { count: stockFromColours })}</a>
+            </p>
+          </div>
+        ) : (
         <fieldset>
           <legend className="label">{t.stock}</legend>
           <div className="flex flex-wrap items-center gap-3">
@@ -67,6 +80,7 @@ export function CarForm({ car, t, options }: { car?: Initial; t: AdminDict["carF
           )}
           {err.stock && <p className="mt-1 text-xs text-[#f0a58f]">{err.stock}</p>}
         </fieldset>
+        )}
         <label className="flex items-center gap-3 text-sm">
           <input type="checkbox" name="published" defaultChecked={values ? values.published === "on" : (car?.published ?? true)} className="size-5 accent-[#c9a66b]" />
           {t.showOnSite}

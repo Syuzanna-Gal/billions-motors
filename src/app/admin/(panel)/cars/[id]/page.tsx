@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { carName, getCarForEdit, listCarsAdmin } from "@/lib/admin/cars";
+import { carName, getCarForEdit, listCarsAdmin, type CarForEdit } from "@/lib/admin/cars";
 import {
-  addColorAction, deleteCarAction, deleteColorAction, deletePhotoAction, saveRelatedAction, setCoverAction, updateColorAction,
+  addColorAction, deleteCarAction, deleteColorAction, deletePhotoAction, saveColorStockAction, saveRelatedAction, setCoverAction, updateColorAction,
   updatePhotoAction, uploadPhotosAction,
 } from "../../../actions";
 import { ConfirmSubmit } from "../../../_components/ConfirmSubmit";
@@ -11,6 +11,7 @@ import { CarForm } from "../CarForm";
 import { adminT, carFormOptions } from "@/lib/admin/lang";
 import type { AdminDict } from "@/lib/admin/i18n";
 import { interpolate } from "@/lib/format";
+import { cellName, comboStock, paintStock, totalStock } from "@/lib/colour-stock";
 
 export async function generateMetadata() {
   return { title: (await adminT()).carForm.editMeta };
@@ -42,7 +43,8 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
       </div>
       <h1 className="-mt-6 font-serif text-4xl font-medium">{carName(car)} {car.year}</h1>
 
-      <CarForm car={car} t={t.carForm} options={options} />
+      <CarForm car={car} t={t.carForm} options={options}
+        stockFromColours={car.colorStock.length ? totalStock(car.colorStock) : null} />
 
       {/* ---------- Colours ---------- */}
       <section id="colors" className="scroll-mt-6">
@@ -95,6 +97,9 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
           </form>
         </div>
       </section>
+
+      {/* ---------- Stock by colour ---------- */}
+      <ColourStockGrid car={car} t={te} />
 
       {/* ---------- Photos ---------- */}
       <section id="photos" className="scroll-mt-6">
@@ -234,5 +239,90 @@ function KindSelect({ t, id, value }: Sel & { id: string; value?: string }) {
         <option value="INTERIOR">{t.interior}</option>
       </select>
     </div>
+  );
+}
+
+/** One box per paint × interior. Saved numbers are shown; the car's total is their sum. */
+function ColourStockGrid({ car, t }: { car: CarForEdit; t: AdminDict["carEdit"] }) {
+  const paints = car.colors.filter((c) => c.kind === "EXTERIOR");
+  const trims = car.colors.filter((c) => c.kind === "INTERIOR");
+  const columns: (number | null)[] = trims.length ? trims.map((c) => c.id) : [null];
+  const rows = car.colorStock;
+  const byColour = rows.length > 0;
+  // Saved rows that no longer match a box (a colour was added, or changed between paint and interior).
+  const shown = new Set(paints.flatMap((p) => columns.map((i) => cellName(p.id, i))));
+  const stale = rows.some((r) => !shown.has(cellName(r.exteriorId, r.interiorId)));
+  const value = (p: number, i: number | null) => {
+    const r = rows.find((x) => x.exteriorId === p && x.interiorId === i);
+    return r ? String(r.stock) : "";
+  };
+
+  return (
+    <section id="stock" className="scroll-mt-6">
+      <h2 className="text-xl font-semibold">{t.stockTitle}</h2>
+      <p className="mt-1 max-w-3xl text-sm text-mute">{t.stockHelp}</p>
+      {paints.length === 0 ? (
+        <p className="mt-4 text-sm text-mute-2">{t.stockNeedPaint}</p>
+      ) : (
+        <form key={rows.map((r) => `${r.exteriorId}:${r.interiorId}:${r.stock}`).join(",")} action={saveColorStockAction}
+          className="mt-4 flex flex-col gap-4">
+          <input type="hidden" name="vehicle_id" value={car.id} />
+          {stale && <p role="alert" className="text-sm text-[#f0a58f]">{t.stockStale}</p>}
+          <div className="overflow-x-auto rounded-2xl border border-line bg-ink-2">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-[0.12em] text-mute-2">
+                <tr>
+                  <th scope="col" className="p-3 font-medium">{t.stockPaint}</th>
+                  {columns.map((i) => {
+                    const trim = trims.find((c) => c.id === i);
+                    return (
+                      <th key={i ?? 0} scope="col" className="p-3 text-center font-medium normal-case tracking-normal">
+                        {trim ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="size-3.5 rounded-full ring-1 ring-white/20" style={{ backgroundColor: trim.hex }} aria-hidden="true" />
+                            {trim.name.en}
+                          </span>
+                        ) : t.stockCount}
+                      </th>
+                    );
+                  })}
+                  {trims.length > 0 && <th scope="col" className="p-3 text-right font-medium">Σ</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {paints.map((p) => (
+                  <tr key={p.id}>
+                    <th scope="row" className="p-3 text-left font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="size-4 rounded-full ring-1 ring-white/20" style={{ backgroundColor: p.hex }} aria-hidden="true" />
+                        {p.name.en}
+                      </span>
+                    </th>
+                    {columns.map((i) => {
+                      const trim = trims.find((c) => c.id === i);
+                      const name = cellName(p.id, i);
+                      return (
+                        <td key={name} className="p-2 text-center">
+                          <input name={name} type="number" min={0} max={999} inputMode="numeric" defaultValue={value(p.id, i)}
+                            placeholder="—" aria-label={trim ? `${p.name.en} / ${trim.name.en}` : p.name.en}
+                            className={`field !min-h-10 w-20 !px-2 text-center ${byColour && comboStock(rows, p.id, i) > 0 ? "!border-gold/50" : ""}`} />
+                        </td>
+                      );
+                    })}
+                    {trims.length > 0 && <td className="p-3 text-right text-mute">{byColour ? paintStock(rows, p.id) : "—"}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <button type="submit" className="btn-gold !min-h-12">{t.stockSave}</button>
+            <span className="text-sm text-mute">
+              {byColour ? interpolate(t.stockTotal, { count: totalStock(rows) }) : t.stockOff}
+            </span>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCarColours } from "./CarColours";
 import type { VehicleColor, VehicleImage } from "@/lib/types";
 import { CarPhoto } from "./CarPhoto";
 
@@ -20,25 +21,21 @@ type Kind = VehicleImage["kind"];
  * Car photos with two pickers: paint colour (exterior photos) and interior trim
  * (interior photos). Each picker shows only when there's something to choose.
  * A colour without photos falls back to the car's general photos of that kind.
+ * Must be inside <CarColoursProvider>.
  */
 export function Gallery({
   images,
-  colors,
   alt,
   labels,
   interior360Url,
 }: {
   images: VehicleImage[];
-  colors: VehicleColor[];
   alt: string;
   labels: Labels;
   interior360Url?: string | null;
 }) {
-  const paints = colors.filter((c) => c.kind === "EXTERIOR");
-  const trims = colors.filter((c) => c.kind === "INTERIOR");
-  const [paintIndex, setPaintIndex] = useState(0);
-  const [trimIndex, setTrimIndex] = useState(0);
-  const [kind, setKind] = useState<Kind>("EXTERIOR");
+  // Colour choice lives in <CarColoursProvider>, so the availability badge can follow it.
+  const { paints, trims, paintIndex, trimIndex, kind, setPaintIndex, setTrimIndex, setKind } = useCarColours();
   const [index, setIndex] = useState(0);
 
   const paint = paints[paintIndex];

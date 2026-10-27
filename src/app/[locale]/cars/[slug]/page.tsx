@@ -11,7 +11,7 @@ import type { Vehicle } from "@/lib/types";
 import { CarCard } from "@/components/CarCard";
 import { Gallery } from "@/components/Gallery";
 import { LeadForm } from "@/components/LeadForm";
-import { StatusBadge } from "@/components/StatusBadge";
+import { CarColoursProvider, ColourStockBadge } from "@/components/CarColours";
 import { reveal, stagger } from "@/lib/reveal";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -57,11 +57,11 @@ export default async function CarPage({ params }: Props) {
         <span className="text-mute">{name}</span>
       </nav>
 
-      <section className="container-page grid gap-10 pt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
+      <CarColoursProvider car={car}>
+      <section className="container-page grid grid-cols-[minmax(0,1fr)] gap-10 pt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-12">
         <div className="flex flex-col gap-10" {...reveal()}>
           <Gallery
             images={car.images}
-            colors={car.colors}
             alt={name}
             labels={{
               exterior: t.car.exterior, interior: t.car.interior, photo: t.car.photo, previous: t.car.previous,
@@ -80,7 +80,9 @@ export default async function CarPage({ params }: Props) {
 
         <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start" {...reveal(150)}>
           <div className="rounded-[24px] border border-line bg-ink-2 p-6 sm:p-7">
-            <StatusBadge car={car} t={t} locale={locale} />
+            {/* Follows the colour in the photo when the car is counted by colour. */}
+            <ColourStockBadge car={car} locale={locale}
+              t={{ status: t.status, units: t.units, car: { colourOnOrder: t.car.colourOnOrder, byInterior: t.car.byInterior } }} />
             <h1 className="mt-4 font-serif text-[40px] font-medium leading-[1.05]">{name}</h1>
             <p className="mt-2 text-sm text-mute">
               {car.year} · {t.fuel[car.fuelType]} · {t.body[car.bodyType]}
@@ -113,6 +115,7 @@ export default async function CarPage({ params }: Props) {
           </div>
         </aside>
       </section>
+      </CarColoursProvider>
 
       {similar.length > 0 && (
         <section className="container-page mt-20 flex flex-col gap-8">

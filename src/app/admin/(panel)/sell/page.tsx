@@ -39,6 +39,7 @@ export default async function SellPage() {
                   <p className="font-medium">
                     {s.vehicle_name}
                     {s.color_name && <span className="text-mute"> · {s.color_name}</span>}
+                    {s.interior_name && <span className="text-mute"> / {s.interior_name}</span>}
                     {s.quantity > 1 && <span className="text-mute"> × {s.quantity}</span>}
                   </p>
                   <p className="mt-1 text-xs text-mute-2">

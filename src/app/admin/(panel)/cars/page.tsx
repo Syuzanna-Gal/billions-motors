@@ -105,6 +105,11 @@ export default async function CarsPage({ searchParams }: Props) {
                   )}
                 </td>
                 <td className="p-4">
+                  {c.by_colour ? (
+                    <Link href={`/admin/cars/${c.id}#stock`} className="inline-flex items-baseline gap-2 text-ivory hover:text-gold">
+                      {c.stock ?? 0} <span className="text-xs text-mute-2">{tc.byColour}</span>
+                    </Link>
+                  ) : (
                   <form action={setStockAction} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={c.id} />
                     <label className="sr-only" htmlFor={`stock-${c.id}`}>{interpolate(tc.stockFor, { car: c.name })}</label>
@@ -112,6 +117,7 @@ export default async function CarsPage({ searchParams }: Props) {
                       className="field !min-h-9 w-20 !px-2 text-center" />
                     <button type="submit" className="rounded-full border border-line px-3 py-1.5 text-xs text-mute hover:text-ivory">{tc.set}</button>
                   </form>
+                  )}
                   {c.stock === 0 && <p className="mt-1 text-xs text-[#f0a58f]">{tc.soldOutHidden}</p>}
                 </td>
                 <td className="p-4 text-mute">{c.price_amd ? new Intl.NumberFormat("en-US").format(c.price_amd) : tc.onRequest}</td>

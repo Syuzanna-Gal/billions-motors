@@ -225,4 +225,25 @@ export const migrations: { id: string; sql: string }[] = [
       ALTER TABLE admin_users ADD COLUMN lang text CHECK (lang IN ('hy', 'en'));
     `,
   },
+  {
+    id: "007_colour_stock",
+    sql: /* sql */ `
+      -- Stock per paint + interior combination. interior_id NULL = the car has no interior options.
+      -- A car with rows here is counted by colour: vehicles.stock is kept equal to the sum of its rows.
+      -- A car without rows is counted as a whole, as before.
+      CREATE TABLE vehicle_color_stock (
+        vehicle_id   integer NOT NULL REFERENCES vehicles (id) ON DELETE CASCADE,
+        exterior_id  integer NOT NULL REFERENCES vehicle_colors (id) ON DELETE CASCADE,
+        interior_id  integer REFERENCES vehicle_colors (id) ON DELETE CASCADE,
+        stock        integer NOT NULL CHECK (stock >= 0),
+        UNIQUE NULLS NOT DISTINCT (exterior_id, interior_id)
+      );
+      CREATE INDEX vehicle_color_stock_vehicle_idx ON vehicle_color_stock (vehicle_id);
+
+      -- Sales of a car counted by colour remember the interior too, so an undo puts the unit back in the right place.
+      ALTER TABLE sales ADD COLUMN interior_id integer REFERENCES vehicle_colors (id) ON DELETE SET NULL;
+      ALTER TABLE sales ADD COLUMN interior_name text;
+      ALTER TABLE sales ADD COLUMN by_colour boolean NOT NULL DEFAULT false;
+    `,
+  },
 ];

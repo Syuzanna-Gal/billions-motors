@@ -2,6 +2,7 @@ import type { Locale } from "@/i18n/config";
 import { getDb, type Db } from "./db";
 import { MAX_QUERY_LENGTH, MIN_QUERY_LENGTH, rankCars } from "./search";
 import { transitDays } from "./transit";
+import type { ColourStock } from "./colour-stock";
 import type {
   BodyType, DriveType, FuelType, SortKey, Vehicle, VehicleColor, VehicleFilters, VehicleImage, VehicleStatus,
 } from "./types";
@@ -224,10 +225,10 @@ async function hydrate(db: Db, rows: VehicleRow[], locale: Locale, detail: "card
       [ids],
     );
     const coverByVehicle = new Map(covers.map((c) => [c.vehicle_id, toImage(c)]));
-    return rows.map((r) => toVehicle(r, { cover: coverByVehicle.get(r.id) ?? null, images: [], colors: [] }));
+    return rows.map((r) => toVehicle(r, { cover: coverByVehicle.get(r.id) ?? null, images: [], colors: [], colorStock: [] }));
   }
 
-  const [colorRows, imageRows] = await Promise.all([
+  const [colorRows, imageRows, stockRows] = await Promise.all([
     db.query<{ id: number; vehicle_id: number; kind: VehicleColor["kind"]; hex: string; name: string | null }>(
       `SELECT c.id, c.vehicle_id, c.kind, c.hex, ct.name
        FROM vehicle_colors c
@@ -240,6 +241,11 @@ async function hydrate(db: Db, rows: VehicleRow[], locale: Locale, detail: "card
       `SELECT vehicle_id, color_id, kind, url, alt, is_cover FROM vehicle_images
        WHERE vehicle_id = ANY($1::int[])
        ORDER BY vehicle_id, position, id`,
+      [ids],
+    ),
+    db.query<ColourStock & { vehicle_id: number }>(
+      `SELECT vehicle_id, exterior_id AS "exteriorId", interior_id AS "interiorId", stock
+       FROM vehicle_color_stock WHERE vehicle_id = ANY($1::int[])`,
       [ids],
     ),
   ]);
@@ -266,11 +272,13 @@ async function hydrate(db: Db, rows: VehicleRow[], locale: Locale, detail: "card
     const colors = colorsByVehicle.get(r.id) ?? [];
     const images = generalByVehicle.get(r.id) ?? [];
     const firstExterior = [...colors.flatMap((c) => c.images), ...images].find((i) => i.kind === "EXTERIOR");
-    return toVehicle(r, { cover: coverByVehicle.get(r.id) ?? firstExterior ?? images[0] ?? null, images, colors });
+    const colorStock = stockRows.filter((s) => s.vehicle_id === r.id)
+      .map(({ exteriorId, interiorId, stock }) => ({ exteriorId, interiorId, stock }));
+    return toVehicle(r, { cover: coverByVehicle.get(r.id) ?? firstExterior ?? images[0] ?? null, images, colors, colorStock });
   });
 }
 
-function toVehicle(r: VehicleRow, media: Pick<Vehicle, "cover" | "images" | "colors">): Vehicle {
+function toVehicle(r: VehicleRow, media: Pick<Vehicle, "cover" | "images" | "colors" | "colorStock">): Vehicle {
   return {
     id: r.id,
     slug: r.slug,

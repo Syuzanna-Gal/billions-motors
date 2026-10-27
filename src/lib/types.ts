@@ -1,3 +1,5 @@
+import type { ColourStock } from "./colour-stock";
+
 export type VehicleStatus = "IN_STOCK" | "IN_TRANSIT" | "PRE_ORDER";
 export type FuelType = "ELECTRIC" | "EREV" | "PHEV" | "HYBRID" | "PETROL";
 export type BodyType = "SEDAN" | "CROSSOVER" | "SUV" | "HATCHBACK" | "WAGON" | "MPV" | "PICKUP";
@@ -60,6 +62,8 @@ export interface Vehicle {
   images: VehicleImage[];
   /** Paint colours, then interior trims (see `kind`). */
   colors: VehicleColor[];
+  /** Stock per paint + interior (car page only); empty = the car is counted as a whole. */
+  colorStock: ColourStock[];
   interior360Url: string | null;
   videoUrl: string | null;
   createdAt: string;

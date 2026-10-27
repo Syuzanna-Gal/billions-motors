@@ -1,5 +1,6 @@
 import { locales, type Locale } from "@/i18n/config";
-import { getDb } from "../db";
+import { getDb, type Tx } from "../db";
+import type { ColourStock } from "../colour-stock";
 import { deleteImageFile } from "../media";
 import type { AdminDict } from "./i18n";
 import type { BodyType, DriveType, FuelType, VehicleStatus } from "../types";
@@ -67,6 +68,8 @@ export interface CarForEdit extends CarFields {
   colors: AdminColor[];
   images: AdminImage[];
   related: number[];
+  /** Stock per paint + interior; empty = the car is counted as a whole. */
+  colorStock: ColourStock[];
 }
 
 export interface CarListItem {
@@ -84,6 +87,8 @@ export interface CarListItem {
   published: boolean;
   featured: boolean;
   photos: number;
+  /** Stock is the sum of the per-colour counts (edited on the car's page). */
+  by_colour: boolean;
 }
 
 const emptyL10n = (): L10n => ({ hy: "", en: "", ru: "" });
@@ -94,7 +99,8 @@ export async function listCarsAdmin(): Promise<CarListItem[]> {
   const db = await getDb();
   const rows = await db.query<Omit<CarListItem, "name">>(
     `SELECT v.id, v.slug, v.brand, v.model, v.trim_level, v.year, v.status, v.stock, v.price_amd, v.arrival_date, v.published, v.featured,
-            (SELECT count(*)::int FROM vehicle_images i WHERE i.vehicle_id = v.id) AS photos
+            (SELECT count(*)::int FROM vehicle_images i WHERE i.vehicle_id = v.id) AS photos,
+            EXISTS (SELECT 1 FROM vehicle_color_stock s WHERE s.vehicle_id = v.id) AS by_colour
      FROM vehicles v ORDER BY v.brand, v.model, v.year DESC, v.id`,
   );
   return rows.map((r) => ({ ...r, arrival_date: toIsoDate(r.arrival_date), name: carName(r) }));
@@ -107,7 +113,7 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
     [id],
   );
   if (!v) return null;
-  const [translations, colors, colorNames, images, related] = await Promise.all([
+  const [translations, colors, colorNames, images, related, colorStock] = await Promise.all([
     db.query<{ locale: Locale; transmission: string | null; description: string | null }>(
       "SELECT locale, transmission, description FROM vehicle_translations WHERE vehicle_id = $1",
       [id],
@@ -126,6 +132,7 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
       [id],
     ),
     db.query<{ related_id: number }>("SELECT related_id FROM vehicle_related WHERE vehicle_id = $1 ORDER BY position", [id]),
+    getColorStock(id),
   ]);
 
   const transmission = emptyL10n();
@@ -146,7 +153,63 @@ export async function getCarForEdit(id: number): Promise<CarForEdit | null> {
     }),
     images,
     related: related.map((r) => r.related_id),
+    colorStock,
   };
+}
+
+/* ---------- Stock per colour ---------- */
+
+export async function getColorStock(vehicleId: number, db: Pick<Tx, "query"> | null = null): Promise<ColourStock[]> {
+  const q = db ?? (await getDb());
+  return q.query<ColourStock>(
+    `SELECT exterior_id AS "exteriorId", interior_id AS "interiorId", stock
+     FROM vehicle_color_stock WHERE vehicle_id = $1`,
+    [vehicleId],
+  );
+}
+
+/**
+ * For a car counted by colour, makes vehicles.stock the sum of its colours. `wasByColour`: the car
+ * had colour rows before this change (if the change removed the last ones, the total becomes 0).
+ */
+export async function syncStock(tx: Tx, vehicleId: number, wasByColour = false) {
+  const [{ rows, total }] = await tx.query<{ rows: number; total: number }>(
+    "SELECT count(*)::int AS rows, coalesce(sum(stock), 0)::int AS total FROM vehicle_color_stock WHERE vehicle_id = $1",
+    [vehicleId],
+  );
+  if (rows > 0 || wasByColour) {
+    await tx.query("UPDATE vehicles SET stock = $1, updated_at = now() WHERE id = $2", [total, vehicleId]);
+  }
+}
+
+const hasColourStock = async (tx: Tx, vehicleId: number) =>
+  (await tx.query("SELECT 1 FROM vehicle_color_stock WHERE vehicle_id = $1 LIMIT 1", [vehicleId])).length > 0;
+
+/**
+ * Replaces the car's per-colour counts. `cells` null = stop counting by colour (the car keeps its
+ * current total and is counted as a whole again). Returns the new total, or null if not by colour.
+ */
+export async function saveColorStock(vehicleId: number, cells: ColourStock[] | null): Promise<number | null> {
+  const db = await getDb();
+  return db.transaction(async (tx) => {
+    // Same lock as a sale, so a sale and an edit can't interleave.
+    await tx.query("SELECT 1 FROM vehicles WHERE id = $1 FOR UPDATE", [vehicleId]);
+    await tx.query("DELETE FROM vehicle_color_stock WHERE vehicle_id = $1", [vehicleId]);
+    if (!cells) return null;
+    // Only this car's own colours, each on the right side (paint / interior).
+    const own = await tx.query<{ id: number; kind: ColorKind }>("SELECT id, kind FROM vehicle_colors WHERE vehicle_id = $1", [vehicleId]);
+    const kindOf = new Map(own.map((c) => [c.id, c.kind]));
+    const valid = cells.filter((c) =>
+      kindOf.get(c.exteriorId) === "EXTERIOR" && (c.interiorId === null || kindOf.get(c.interiorId) === "INTERIOR"));
+    for (const c of valid) {
+      await tx.query(
+        "INSERT INTO vehicle_color_stock (vehicle_id, exterior_id, interior_id, stock) VALUES ($1, $2, $3, $4)",
+        [vehicleId, c.exteriorId, c.interiorId, c.stock],
+      );
+    }
+    await syncStock(tx, vehicleId, true);
+    return valid.reduce((sum, c) => sum + c.stock, 0);
+  });
 }
 
 /* ---------- Form parsing ---------- */
@@ -211,7 +274,8 @@ export function parseCarForm(form: FormData, msg: AdminDict["carForm"]["errors"]
     warranty_years: num("warranty_years", { required: true, int: true, min: 0, max: 20 }) ?? 3,
     warranty_km: num("warranty_km", { required: true, int: true, min: 0, max: 1_000_000 }) ?? 100000,
     price_amd: num("price_amd", { int: true, min: 1 }),
-    stock: stockMode === "untracked" ? null : (num("stock", { required: true, int: true, min: 0, max: 999 }) ?? 0),
+    // "colours": counted by colour — saveCar sets the total from the colours.
+    stock: stockMode === "untracked" || stockMode === "colours" ? null : (num("stock", { required: true, int: true, min: 0, max: 999 }) ?? 0),
     arrival_days: num("arrival_days", { int: true, min: 1, max: MAX_TRANSIT_DAYS }),
     featured: form.get("featured") === "on",
     published: form.get("published") === "on",
@@ -278,6 +342,8 @@ export async function saveCar(data: CarFields, id?: number): Promise<number> {
         [vehicleId, l, data.transmission[l] || null, data.description[l] || null],
       );
     }
+    // Counted by colour: the total always comes from the colours, whatever the form sent.
+    await syncStock(tx, vehicleId!);
     return vehicleId!;
   });
 }
@@ -306,11 +372,18 @@ export async function addColor(vehicleId: number, kind: ColorKind, hex: string, 
 export async function updateColor(vehicleId: number, colorId: number, kind: ColorKind, hex: string, name: L10n, position: number) {
   const db = await getDb();
   await db.transaction(async (tx) => {
-    const rows = await tx.query(
-      "UPDATE vehicle_colors SET kind = $1, hex = $2, position = $3 WHERE id = $4 AND vehicle_id = $5 RETURNING id",
-      [kind, hex, position, colorId, vehicleId],
+    const [before] = await tx.query<{ kind: ColorKind }>(
+      "SELECT kind FROM vehicle_colors WHERE id = $1 AND vehicle_id = $2 FOR UPDATE",
+      [colorId, vehicleId],
     );
-    if (rows.length === 0) return;
+    if (!before) return;
+    await tx.query("UPDATE vehicle_colors SET kind = $1, hex = $2, position = $3 WHERE id = $4", [kind, hex, position, colorId]);
+    if (before.kind !== kind) {
+      // A paint became an interior (or back): its stock combinations no longer make sense.
+      const wasByColour = await hasColourStock(tx, vehicleId);
+      await tx.query("DELETE FROM vehicle_color_stock WHERE exterior_id = $1 OR interior_id = $1", [colorId]);
+      await syncStock(tx, vehicleId, wasByColour);
+    }
     for (const l of locales) {
       await tx.query(
         `INSERT INTO vehicle_color_translations (color_id, locale, name) VALUES ($1, $2, $3)
@@ -324,7 +397,13 @@ export async function updateColor(vehicleId: number, colorId: number, kind: Colo
 export async function deleteColor(vehicleId: number, colorId: number) {
   const db = await getDb();
   const images = await db.query<{ url: string }>("SELECT url FROM vehicle_images WHERE color_id = $1 AND vehicle_id = $2", [colorId, vehicleId]);
-  await db.query("DELETE FROM vehicle_colors WHERE id = $1 AND vehicle_id = $2", [colorId, vehicleId]);
+  await db.transaction(async (tx) => {
+    await tx.query("SELECT 1 FROM vehicles WHERE id = $1 FOR UPDATE", [vehicleId]);
+    const wasByColour = await hasColourStock(tx, vehicleId);
+    // Its stock rows go with it (ON DELETE CASCADE); the car's total follows.
+    await tx.query("DELETE FROM vehicle_colors WHERE id = $1 AND vehicle_id = $2", [colorId, vehicleId]);
+    await syncStock(tx, vehicleId, wasByColour);
+  });
   await Promise.all(images.map((i) => deleteImageFile(i.url)));
 }
 

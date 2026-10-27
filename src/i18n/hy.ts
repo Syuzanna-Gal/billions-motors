@@ -57,6 +57,8 @@ export const hy: Dictionary = {
     photo: "Մեքենայի լուսանկար",
     color: "Գույն",
     interiorColor: "Սրահ",
+    colourOnOrder: "Այս գույնը՝ պատվերով",
+    byInterior: "Ըստ սրահի",
     view360: "Սրահ 360°",
     exterior: "Արտաքին",
     interior: "Ներքին",

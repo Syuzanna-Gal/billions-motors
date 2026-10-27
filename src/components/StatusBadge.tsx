@@ -8,7 +8,7 @@ import type { Vehicle } from "@/lib/types";
  */
 export function StatusBadge({
   car, t, locale, className = "",
-}: { car: Pick<Vehicle, "status" | "stock" | "arrivalDays">; t: Dictionary; locale: Locale; className?: string }) {
+}: { car: Pick<Vehicle, "status" | "stock" | "arrivalDays">; t: Pick<Dictionary, "status" | "units">; locale: Locale; className?: string }) {
   const { status, stock, arrivalDays } = car;
   let extra: string | null = null;
   if (status === "IN_STOCK" && stock != null && stock > 0) extra = `${stock} ${stock === 1 ? t.units.pc : t.units.pcs}`;

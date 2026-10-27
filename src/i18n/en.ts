@@ -55,6 +55,8 @@ export const en = {
     photo: "Car photo",
     color: "Colour",
     interiorColor: "Interior",
+    colourOnOrder: "This colour: on order",
+    byInterior: "By interior",
     view360: "360° interior",
     exterior: "Exterior",
     interior: "Interior",

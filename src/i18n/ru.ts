@@ -57,6 +57,8 @@ export const ru: Dictionary = {
     photo: "Фото автомобиля",
     color: "Цвет",
     interiorColor: "Салон",
+    colourOnOrder: "Этот цвет — под заказ",
+    byInterior: "По салону",
     view360: "Салон 360°",
     exterior: "Экстерьер",
     interior: "Интерьер",

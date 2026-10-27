@@ -8,7 +8,8 @@ import {
 import { getDb } from "@/lib/db";
 import { locales } from "@/i18n/config";
 import {
-  addColor, addImages, deleteCar, deleteColor, deleteImage, getCarForEdit, parseCarForm, saveCar, setCover, setRelated, updateColor, updateImage,
+  addColor, addImages, deleteCar, deleteColor, deleteImage, getCarForEdit, parseCarForm, saveCar, saveColorStock, setCover, setRelated,
+  updateColor, updateImage,
   type FieldErrors, type L10n,
 } from "@/lib/admin/cars";
 import { cancelSale, recordSale, type SaleResult } from "@/lib/admin/sales";
@@ -18,6 +19,7 @@ import { saveSectionTexts, sectionBySlug } from "@/lib/admin/texts";
 import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/lib/settings";
 import { saveImage, UploadError } from "@/lib/media";
 import { interpolate } from "@/lib/format";
+import { parseStockGrid } from "@/lib/colour-stock";
 import { cookies } from "next/headers";
 import { ADMIN_LANG_COOKIE, adminT } from "@/lib/admin/lang";
 import { isAdminLang } from "@/lib/admin/i18n";
@@ -32,8 +34,11 @@ const int = (f: FormData, k: string) => {
   const n = Number(str(f, k));
   return Number.isInteger(n) ? n : NaN;
 };
-const back = (path: string, msg: string, kind: "ok" | "err" = "ok"): never =>
-  redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
+/** Redirects with a message (?ok= / ?err=). The message goes before any #section, or the page wouldn't see it. */
+const back = (path: string, msg: string, kind: "ok" | "err" = "ok"): never => {
+  const [base, hash] = path.split("#");
+  return redirect(`${base}${base.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}${hash ? `#${hash}` : ""}`);
+};
 
 /** Car pages on the public site are rendered per request; this clears any router cache too. */
 function refreshSite() {
@@ -92,6 +97,7 @@ export async function sellAction(_: SaleResult | undefined, form: FormData): Pro
   const vehicleId = int(form, "vehicle_id");
   const quantity = int(form, "quantity") || 1;
   const colorId = str(form, "color_id") ? int(form, "color_id") : null;
+  const interiorId = str(form, "interior_id") ? int(form, "interior_id") : null;
   const priceRaw = str(form, "price_amd").replace(/[\s,]/g, "");
   const price = priceRaw ? Number(priceRaw) : null;
   if (!Number.isInteger(vehicleId)) return { ok: false, error: t.chooseCar };
@@ -100,7 +106,8 @@ export async function sellAction(_: SaleResult | undefined, form: FormData): Pro
 
   const result = await recordSale(
     {
-      vehicleId, colorId: Number.isInteger(colorId) ? colorId : null, quantity, priceAmd: price,
+      vehicleId, colorId: Number.isInteger(colorId) ? colorId : null,
+      interiorId: Number.isInteger(interiorId) ? interiorId : null, quantity, priceAmd: price,
       customerName: str(form, "customer_name", 120) || null,
       customerPhone: str(form, "customer_phone", 30) || null,
       note: str(form, "note", 500) || null,
@@ -161,7 +168,14 @@ export async function setStockAction(form: FormData) {
   const stock = str(form, "stock") === "" ? null : int(form, "stock");
   if (stock !== null && (!Number.isInteger(stock) || stock < 0)) back("/admin/cars", (await adminT()).cars.stockInvalid, "err");
   const db = await getDb();
-  await db.query("UPDATE vehicles SET stock = $1, updated_at = now() WHERE id = $2", [stock, int(form, "id")]);
+  // Counted by colour: the total comes from the colours (set on the car's page).
+  const [row] = await db.query<{ by_colour: boolean }>(
+    `UPDATE vehicles SET stock = $1, updated_at = now()
+     WHERE id = $2 AND NOT EXISTS (SELECT 1 FROM vehicle_color_stock s WHERE s.vehicle_id = $2)
+     RETURNING false AS by_colour`,
+    [stock, int(form, "id")],
+  );
+  if (!row) back("/admin/cars", (await adminT()).cars.stockByColour, "err");
   refreshSite();
   revalidatePath("/admin/cars");
 }
@@ -199,6 +213,22 @@ export async function deleteColorAction(form: FormData) {
   await deleteColor(id, int(form, "color_id"));
   refreshSite();
   back(`/admin/cars/${id}#colors`, (await adminT()).carEdit.colourDeleted);
+}
+
+export async function saveColorStockAction(form: FormData) {
+  await requireUser("FULL");
+  const id = int(form, "vehicle_id");
+  const t = (await adminT()).carEdit;
+  const car = await getCarForEdit(id);
+  if (!car) back("/admin/cars", t.carNotFound, "err");
+  const ids = (kind: string) => car!.colors.filter((c) => c.kind === kind).map((c) => c.id);
+  const grid = parseStockGrid((name) => (form.get(name) as string | null), ids("EXTERIOR"), ids("INTERIOR"));
+  if (grid.mode === "error") back(`/admin/cars/${id}#stock`, t.stockBad, "err");
+  const total = await saveColorStock(id, grid.mode === "save" ? grid.cells : null);
+  refreshSite();
+  back(`/admin/cars/${id}#stock`, total === null
+    ? interpolate(t.stockCleared, { count: car!.stock ?? 0 })
+    : interpolate(t.stockSaved, { count: total }));
 }
 
 export async function uploadPhotosAction(form: FormData) {
