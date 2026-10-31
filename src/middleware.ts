@@ -13,9 +13,10 @@ export function middleware(request: NextRequest) {
     .split(",")
     .map((part) => part.trim().slice(0, 2));
   const locale = preferred.find(isLocale) ?? defaultLocale;
-  const url = request.nextUrl.clone();
-  url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
-  return NextResponse.redirect(url);
+  // A relative Location: on the server Next.js only knows its internal address (localhost:3000),
+  // so an absolute URL built from request.nextUrl would send visitors there.
+  const target = `/${locale}${pathname === "/" ? "" : pathname}${request.nextUrl.search}`;
+  return new NextResponse(null, { status: 307, headers: { Location: target } });
 }
 
 export const config = {
