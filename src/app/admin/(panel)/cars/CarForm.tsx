@@ -63,6 +63,7 @@ export function CarForm({
 
       <Section title={t.priceStock}>
         <Field {...f} name="price_amd" label={t.price} type="number" hint={t.priceHint} />
+        <Field {...f} name="price_warranty_amd" label={t.priceWarranty} type="number" hint={t.priceWarrantyHint} />
         {stockFromColours !== null ? (
           <div>
             {/* The total comes from the colours; the server recalculates it on save. */}

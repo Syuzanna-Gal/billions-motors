@@ -88,9 +88,22 @@ export default async function CarPage({ params }: Props) {
               {car.year} · {t.fuel[car.fuelType]} · {t.body[car.bodyType]}
             </p>
             <div className="gold-rule my-6 opacity-60" />
+            {/* Two prices: without warranty (the main one, large) and with warranty underneath. */}
+            {car.priceAmd && car.priceWarrantyAmd && (
+              <p className="eyebrow mb-2">{t.car.withoutWarranty}</p>
+            )}
             <p className="text-gold font-serif text-[34px] leading-none">
               {car.priceAmd ? formatAmd(car.priceAmd, locale) : t.car.contactForPrice}
             </p>
+            {car.priceWarrantyAmd && (
+              <p className="mt-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[15px] text-mute">
+                <span>{t.car.withWarranty}</span>
+                <span className="font-medium text-ivory">{formatAmd(car.priceWarrantyAmd, locale)}</span>
+                <span className="text-[13px] text-mute-2">
+                  · {car.warrantyYears} {t.car.years} / {formatNumber(car.warrantyKm, locale)} {t.units.km}
+                </span>
+              </p>
+            )}
             {monthly && (
               <p className="mt-2 text-sm text-mute">
                 {t.car.monthlyFrom} {formatAmd(monthly, locale)}

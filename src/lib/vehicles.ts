@@ -18,7 +18,7 @@ interface VehicleRow {
   status: VehicleStatus; fuel_type: FuelType; body_type: BodyType; drive: DriveType;
   horsepower: number; ev_range_km: number | null; battery_kwh: number | null; accel_0_100: number | null;
   top_speed_kmh: number | null; seats: number; length_mm: number | null; width_mm: number | null; height_mm: number | null;
-  warranty_years: number; warranty_km: number; price_amd: number | null; stock: number | null;
+  warranty_years: number; warranty_km: number; price_amd: number | null; price_warranty_amd: number | null; stock: number | null;
   interior_360_url: string | null; video_url: string | null; arrival_date: string | Date | null; featured: boolean; created_at: Date | string;
   transmission: string | null; description: string | null;
 }
@@ -304,6 +304,7 @@ function toVehicle(r: VehicleRow, media: Pick<Vehicle, "cover" | "images" | "col
     warrantyYears: r.warranty_years,
     warrantyKm: r.warranty_km,
     priceAmd: r.price_amd,
+    priceWarrantyAmd: r.price_warranty_amd,
     stock: r.stock,
     arrivalDays: transitDays(r.status, r.arrival_date),
     featured: r.featured,

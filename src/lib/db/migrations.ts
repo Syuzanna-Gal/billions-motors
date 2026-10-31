@@ -246,4 +246,12 @@ export const migrations: { id: string; sql: string }[] = [
       ALTER TABLE sales ADD COLUMN by_colour boolean NOT NULL DEFAULT false;
     `,
   },
+  {
+    id: "008_warranty_price",
+    sql: /* sql */ `
+      -- Two prices: price_amd is the main one (without warranty, shown large);
+      -- this is the price with the warranty, shown under it. NULL = not offered / not shown.
+      ALTER TABLE vehicles ADD COLUMN price_warranty_amd bigint CHECK (price_warranty_amd IS NULL OR price_warranty_amd > 0);
+    `,
+  },
 ];

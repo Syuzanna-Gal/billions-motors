@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Dictionary, Locale } from "@/i18n";
-import { formatAmd, formatNumber, vehicleName } from "@/lib/format";
+import { formatAmd, formatNumber, interpolate, vehicleName } from "@/lib/format";
 import type { Vehicle } from "@/lib/types";
 import { CarPhoto } from "./CarPhoto";
 import { StatusBadge } from "./StatusBadge";
@@ -45,8 +45,15 @@ export function CarCard({ car, locale, t }: { car: Vehicle; locale: Locale; t: D
           </div>
         </dl>
         <div className="mt-auto flex items-center justify-between border-t border-line pt-4">
-          <span className="text-[15px] text-gold">
-            {car.priceAmd ? formatAmd(car.priceAmd, locale) : t.car.contactForPrice}
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[15px] text-gold">
+              {car.priceAmd ? formatAmd(car.priceAmd, locale) : t.car.contactForPrice}
+            </span>
+            {car.priceWarrantyAmd && (
+              <span className="text-[12px] text-mute-2">
+                {interpolate(t.car.withWarrantyPrice, { price: formatAmd(car.priceWarrantyAmd, locale) })}
+              </span>
+            )}
           </span>
           <span className="text-[13px] text-ivory" aria-hidden="true">
             {t.car.details}

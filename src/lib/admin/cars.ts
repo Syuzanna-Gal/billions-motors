@@ -33,6 +33,7 @@ export interface CarFields {
   warranty_years: number;
   warranty_km: number;
   price_amd: number | null;
+  price_warranty_amd: number | null;
   stock: number | null;
   /** Days until arrival, for cars in transit. Stored as a date, so it counts down by itself. */
   arrival_days: number | null;
@@ -274,6 +275,7 @@ export function parseCarForm(form: FormData, msg: AdminDict["carForm"]["errors"]
     warranty_years: num("warranty_years", { required: true, int: true, min: 0, max: 20 }) ?? 3,
     warranty_km: num("warranty_km", { required: true, int: true, min: 0, max: 1_000_000 }) ?? 100000,
     price_amd: num("price_amd", { int: true, min: 1 }),
+    price_warranty_amd: num("price_warranty_amd", { int: true, min: 1 }),
     // "colours": counted by colour — saveCar sets the total from the colours.
     stock: stockMode === "untracked" || stockMode === "colours" ? null : (num("stock", { required: true, int: true, min: 0, max: 999 }) ?? 0),
     arrival_days: num("arrival_days", { int: true, min: 1, max: MAX_TRANSIT_DAYS }),
@@ -312,7 +314,7 @@ async function uniqueSlug(base: string, excludeId?: number): Promise<string> {
 const COLUMNS = [
   "slug", "brand", "model", "trim_level", "year", "status", "fuel_type", "body_type", "drive", "horsepower",
   "ev_range_km", "battery_kwh", "accel_0_100", "top_speed_kmh", "seats", "length_mm", "width_mm", "height_mm",
-  "warranty_years", "warranty_km", "price_amd", "stock", "featured", "published", "interior_360_url", "video_url",
+  "warranty_years", "warranty_km", "price_amd", "price_warranty_amd", "stock", "featured", "published", "interior_360_url", "video_url",
 ] as const;
 
 export async function saveCar(data: CarFields, id?: number): Promise<number> {

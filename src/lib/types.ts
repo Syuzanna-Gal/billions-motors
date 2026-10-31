@@ -50,7 +50,10 @@ export interface Vehicle {
   heightMm: number | null;
   warrantyYears: number;
   warrantyKm: number;
+  /** Main price, without warranty (shown large). */
   priceAmd: number | null;
+  /** Price with the warranty, shown under the main one; null = not shown. */
+  priceWarrantyAmd: number | null;
   /** Cars left; null = not counted (pre-order / in transit). */
   stock: number | null;
   /** Days until a car on the road arrives (never below 1); null if not in transit or no date set. */
