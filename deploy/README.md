@@ -34,4 +34,5 @@ The restore removes the development test accounts (`*@billions.local`).
 - Put the latest code live: `ssh root@SERVER billions-update`
 - Logs: `journalctl -u billions -f`
 - Restart: `systemctl restart billions`
+- Close/open the site with a login: `billions-private on` / `billions-private off` (`status` shows the login)
 - Launch day: set `SITE_NOINDEX=false` in `/etc/billions.env`, then `billions-update`.

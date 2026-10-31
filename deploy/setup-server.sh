@@ -133,9 +133,14 @@ systemctl daemon-reload
 systemctl enable billions >/dev/null
 
 step "Web server"
+ACCESS_FILE=/etc/caddy/billions-access.caddy
+[ -f "$ACCESS_FILE" ] || : > "$ACCESS_FILE"
+install -m 0755 "$APP/deploy/private.sh" /usr/local/bin/billions-private
 cat > /etc/caddy/Caddyfile <<CADDY
 # HTTPS certificates are obtained automatically once $DOMAIN points to this server.
 $DOMAIN {
+	# Empty = open to everyone; "billions-private on" puts a login on the whole site.
+	import $ACCESS_FILE
 	encode zstd gzip
 	request_body {
 		max_size 80MB
