@@ -63,7 +63,7 @@ dpkg-reconfigure -f noninteractive unattended-upgrades
 step "App user and folders"
 id "$APP_USER" >/dev/null 2>&1 || useradd --system --home-dir "$BASE" --shell /usr/sbin/nologin "$APP_USER"
 install -d -o "$APP_USER" -g "$APP_USER" -m 0750 "$BASE" "$BASE/uploads"
-install -d -o postgres -g postgres -m 0750 "$BASE/backups"
+install -d -o postgres -g postgres -m 0750 /var/backups/billions
 
 step "Database and settings"
 if [ ! -f "$ENV_FILE" ]; then
@@ -152,7 +152,7 @@ systemctl reload caddy || systemctl restart caddy
 step "Nightly database backup (kept 14 days)"
 cat > /etc/cron.d/billions-backup <<CRON
 # Every night at 23:30 UTC (03:30 in Yerevan): database copy, 14 days kept.
-30 23 * * * postgres pg_dump -Fc billions -f $BASE/backups/billions-\$(date +\%Y\%m\%d).dump && find $BASE/backups -name 'billions-*.dump' -mtime +14 -delete
+30 23 * * * postgres pg_dump -Fc billions -f /var/backups/billions/billions-\$(date +\%Y\%m\%d).dump && find /var/backups/billions -name 'billions-*.dump' -mtime +14 -delete
 CRON
 chmod 0644 /etc/cron.d/billions-backup
 

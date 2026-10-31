@@ -8,7 +8,7 @@ DUMP="${1:?Usage: restore.sh FILE.dump}"
 
 systemctl stop billions
 # Safety copy of whatever is there now.
-sudo -u postgres pg_dump -Fc billions -f "/srv/billions/backups/before-restore-$(date +%Y%m%d-%H%M%S).dump" || true
+sudo -u postgres pg_dump -Fc billions -f "/var/backups/billions/before-restore-$(date +%Y%m%d-%H%M%S).dump" || true
 
 install -m 0644 "$DUMP" /tmp/billions-restore.dump
 sudo -u postgres pg_restore --clean --if-exists --no-owner --no-acl --role=billions -d billions /tmp/billions-restore.dump

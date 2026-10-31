@@ -8,7 +8,7 @@ the site (Node.js, systemd service `billions`), PostgreSQL 18, and Caddy (HTTPS)
 | Site code | `/srv/billions/app` (a clone of this repo) |
 | Car photos | `/srv/billions/uploads` |
 | Settings (database password etc.) | `/etc/billions.env` |
-| Nightly database copies (14 days) | `/srv/billions/backups` |
+| Nightly database copies (14 days) | `/var/backups/billions` |
 | Web server config | `/etc/caddy/Caddyfile` |
 
 ## First setup (once)
