@@ -220,6 +220,8 @@ export type FieldErrors = Partial<Record<string, string>>;
 export function parseCarForm(form: FormData, msg: AdminDict["carForm"]["errors"]): { data: CarFields; errors: FieldErrors } {
   const errors: FieldErrors = {};
   const text = (k: string, max = 200) => String(form.get(k) ?? "").trim().slice(0, max);
+  /** Largest value a PostgreSQL integer column holds. */
+  const MAX_INT = 2_147_483_647;
   const num = (k: string, opts: { required?: boolean; int?: boolean; min?: number; max?: number } = {}) => {
     const raw = text(k).replace(/[\s,]/g, "");
     if (!raw) {
@@ -263,15 +265,16 @@ export function parseCarForm(form: FormData, msg: AdminDict["carForm"]["errors"]
     fuel_type: pick("fuel_type", filterOptions.fuel),
     body_type: pick("body_type", filterOptions.body),
     drive: pick("drive", ["FWD", "RWD", "AWD"] as const),
-    horsepower: num("horsepower", { required: true, int: true, min: 1, max: 3000 }) ?? 0,
-    ev_range_km: num("ev_range_km", { int: true, min: 0, max: 3000 }),
-    battery_kwh: num("battery_kwh", { min: 0, max: 500 }),
-    accel_0_100: num("accel_0_100", { min: 0, max: 60 }),
-    top_speed_kmh: num("top_speed_kmh", { int: true, min: 0, max: 500 }),
-    seats: num("seats", { required: true, int: true, min: 1, max: 12 }) ?? 5,
-    length_mm: num("length_mm", { int: true, min: 0, max: 10000 }),
-    width_mm: num("width_mm", { int: true, min: 0, max: 5000 }),
-    height_mm: num("height_mm", { int: true, min: 0, max: 5000 }),
+    // No practical upper limits on specs: only what the database columns can store.
+    horsepower: num("horsepower", { required: true, int: true, min: 1, max: MAX_INT }) ?? 0,
+    ev_range_km: num("ev_range_km", { int: true, min: 0, max: MAX_INT }),
+    battery_kwh: num("battery_kwh", { min: 0, max: 9999.9 }),
+    accel_0_100: num("accel_0_100", { min: 0, max: 999.9 }),
+    top_speed_kmh: num("top_speed_kmh", { int: true, min: 0, max: MAX_INT }),
+    seats: num("seats", { required: true, int: true, min: 1, max: MAX_INT }) ?? 5,
+    length_mm: num("length_mm", { int: true, min: 0, max: MAX_INT }),
+    width_mm: num("width_mm", { int: true, min: 0, max: MAX_INT }),
+    height_mm: num("height_mm", { int: true, min: 0, max: MAX_INT }),
     warranty_years: num("warranty_years", { required: true, int: true, min: 0, max: 20 }) ?? 3,
     warranty_km: num("warranty_km", { required: true, int: true, min: 0, max: 1_000_000 }) ?? 100000,
     price_amd: num("price_amd", { int: true, min: 1 }),
@@ -409,7 +412,19 @@ export async function deleteColor(vehicleId: number, colorId: number) {
   await Promise.all(images.map((i) => deleteImageFile(i.url)));
 }
 
-export async function addImages(vehicleId: number, colorId: number | null, kind: "EXTERIOR" | "INTERIOR", urls: string[]) {
+/**
+ * A photo tied to a colour gets that colour's kind: an interior-trim photo is an interior photo.
+ * (Otherwise a photo set to "Beige leather" but left on "Exterior" would never be shown.)
+ */
+async function photoKind(vehicleId: number, colorId: number | null, kind: ColorKind): Promise<ColorKind> {
+  if (colorId === null) return kind;
+  const db = await getDb();
+  const [c] = await db.query<{ kind: ColorKind }>("SELECT kind FROM vehicle_colors WHERE id = $1 AND vehicle_id = $2", [colorId, vehicleId]);
+  return c?.kind ?? kind;
+}
+
+export async function addImages(vehicleId: number, colorId: number | null, requestedKind: ColorKind, urls: string[]) {
+  const kind = await photoKind(vehicleId, colorId, requestedKind);
   const db = await getDb();
   await db.transaction(async (tx) => {
     const [{ next }] = await tx.query<{ next: number }>(
@@ -424,7 +439,8 @@ export async function addImages(vehicleId: number, colorId: number | null, kind:
   });
 }
 
-export async function updateImage(vehicleId: number, imageId: number, colorId: number | null, kind: "EXTERIOR" | "INTERIOR", position: number) {
+export async function updateImage(vehicleId: number, imageId: number, colorId: number | null, requestedKind: ColorKind, position: number) {
+  const kind = await photoKind(vehicleId, colorId, requestedKind);
   const db = await getDb();
   await db.query("UPDATE vehicle_images SET color_id = $1, kind = $2, position = $3 WHERE id = $4 AND vehicle_id = $5", [
     colorId, kind, position, imageId, vehicleId,

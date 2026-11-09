@@ -254,4 +254,14 @@ export const migrations: { id: string; sql: string }[] = [
       ALTER TABLE vehicles ADD COLUMN price_warranty_amd bigint CHECK (price_warranty_amd IS NULL OR price_warranty_amd > 0);
     `,
   },
+  {
+    id: "009_photo_kind_follows_colour",
+    sql: /* sql */ `
+      -- A photo tied to an interior trim is an interior photo (and a paint photo an exterior one).
+      -- Photos saved with a mismatched type were never shown on the site; this puts them right.
+      UPDATE vehicle_images i SET kind = c.kind
+      FROM vehicle_colors c
+      WHERE i.color_id = c.id AND i.kind <> c.kind;
+    `,
+  },
 ];
