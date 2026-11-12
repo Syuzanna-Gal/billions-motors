@@ -89,8 +89,9 @@ export default async function EditCarPage({ params }: { params: Promise<{ id: st
             <ColorKindSelect {...sel} id="new-kind" />
             {LANGS.map(([l, name]) => (
               <div key={l}>
-                <label className="label" htmlFor={`new-name-${l}`}>{name}{l === "en" && " *"}</label>
-                <input id={`new-name-${l}`} name={`name_${l}`} required={l === "en"} placeholder={l === "en" ? te.colourPlaceholder : ""} className="field" />
+                <label className="label" htmlFor={`new-name-${l}`}>{name}</label>
+                {/* A name in any one language is enough; the others fall back to it. */}
+                <input id={`new-name-${l}`} name={`name_${l}`} placeholder={l === "en" ? te.colourPlaceholder : ""} className="field" />
               </div>
             ))}
             <button type="submit" className="btn-gold !min-h-12">{te.addColour}</button>

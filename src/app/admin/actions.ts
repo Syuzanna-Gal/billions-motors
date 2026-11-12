@@ -192,7 +192,12 @@ export async function setStockAction(form: FormData) {
   revalidatePath("/admin/cars");
 }
 
-const colorNames = (form: FormData): L10n => Object.fromEntries(locales.map((l) => [l, str(form, `name_${l}`, 60)])) as L10n;
+/** Colour names per language. A name in any one language is enough: the others fall back to it. */
+const colorNames = (form: FormData): L10n => {
+  const names = Object.fromEntries(locales.map((l) => [l, str(form, `name_${l}`, 60)])) as L10n;
+  const first = names.en || names.hy || names.ru;
+  return Object.fromEntries(locales.map((l) => [l, names[l] || first])) as L10n;
+};
 const validHex = (h: string) => /^#[0-9a-f]{6}$/i.test(h);
 const colorKind = (form: FormData) => (str(form, "kind") === "INTERIOR" ? "INTERIOR" : "EXTERIOR");
 

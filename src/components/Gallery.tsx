@@ -19,7 +19,7 @@ type Kind = VehicleImage["kind"];
 
 /*
  * Car photos with two pickers: paint colour (exterior photos) and interior trim
- * (interior photos). Each picker shows only when there's something to choose.
+ * (interior photos). The Interior tab shows when the car has interior trims or interior photos.
  * A colour without photos falls back to the car's general photos of that kind.
  * Must be inside <CarColoursProvider>.
  */
@@ -47,7 +47,9 @@ export function Gallery({
   const exteriorList = firstNonEmpty(ofKind(paint, "EXTERIOR"), general("EXTERIOR"));
   // Interior: the chosen trim, else interior shots uploaded under the paint colour, else general ones.
   const interiorList = firstNonEmpty(ofKind(trim, "INTERIOR"), ofKind(paint, "INTERIOR"), general("INTERIOR"));
-  const hasInterior = trims.some((t) => t.images.length > 0) || interiorList.length > 0;
+  // Interior colours show even before any interior photo is uploaded: the swatches still tell
+  // customers which trims exist (a trim without photos shows the placeholder with its name).
+  const hasInterior = trims.length > 0 || interiorList.length > 0;
 
   const list = kind === "EXTERIOR" ? exteriorList : interiorList;
   const current = list[Math.min(index, list.length - 1)];
