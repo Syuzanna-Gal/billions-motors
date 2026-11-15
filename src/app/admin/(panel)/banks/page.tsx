@@ -3,6 +3,8 @@ import { adminT } from "@/lib/admin/lang";
 import { getBankSlots, bankInitials } from "@/lib/banks";
 import { interpolate } from "@/lib/format";
 import { saveBankAction } from "../../actions";
+import { getSectionTexts, sectionBySlug } from "@/lib/admin/texts";
+import { TextsForm } from "../texts/[section]/TextsForm";
 
 export async function generateMetadata() {
   return { title: (await adminT()).banks.title };
@@ -10,8 +12,11 @@ export async function generateMetadata() {
 
 export default async function BanksPage() {
   await requireUser("FULL");
-  const [slots, all] = await Promise.all([getBankSlots(), adminT()]);
+  // The title and text above the logos are site texts ("banks.*"): edited here and in Site texts.
+  const section = sectionBySlug("info-pages")!;
+  const [slots, all, texts] = await Promise.all([getBankSlots(), adminT(), getSectionTexts(section)]);
   const t = all.banks;
+  const bankTexts = texts.filter((r) => r.group === "banks");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -23,6 +28,15 @@ export default async function BanksPage() {
         <a href="/hy/financing" target="_blank" rel="noopener" className="text-sm text-gold hover:text-ivory">{t.preview}</a>
       </header>
 
+      <section aria-labelledby="bank-texts" className="flex flex-col gap-3">
+        <h2 id="bank-texts" className="text-xl font-semibold">{t.textsTitle}</h2>
+        <p className="-mt-1 text-sm text-mute">{t.textsLead}</p>
+        <TextsForm section={section.slug} rows={bankTexts} groupTitles={all.texts.groups}
+          t={{ edited: all.texts.edited, useDefault: all.texts.useDefault, listHint: all.texts.listHint, save: all.texts.save, saving: all.common.saving }}
+          langNames={all.common.langs} />
+      </section>
+
+      <h2 className="mt-4 text-xl font-semibold">{t.logosTitle}</h2>
       <ol className="grid gap-4 md:grid-cols-2">
         {slots.map((b) => {
           const filled = Boolean(b.logoUrl || b.name);

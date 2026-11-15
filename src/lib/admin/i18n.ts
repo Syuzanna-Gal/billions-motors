@@ -71,6 +71,9 @@ const en = {
     badUrl: "The website must start with https://",
     badPlace: "Unknown place.",
     preview: "See the Financing page ↗",
+    textsTitle: "Title and text",
+    textsLead: "Shown above the logos, in each language. Also editable in Site texts → “Financing, Import, Warranty, About”.",
+    logosTitle: "Logos",
   },
   auth: {
     signInTitle: "Admin sign in",
@@ -443,6 +446,9 @@ const hy: AdminDict = {
     badUrl: "Կայքը պետք է սկսվի https://-ով",
     badPlace: "Անհայտ տեղ։",
     preview: "Դիտել «Ֆինանսավորում» էջը ↗",
+    textsTitle: "Վերնագիր և տեքստ",
+    textsLead: "Ցուցադրվում է լոգոների վերևում՝ յուրաքանչյուր լեզվով։ Կարելի է փոխել նաև «Կայքի տեքստեր → Ֆինանսավորում, Ներմուծում, Երաշխիք, Մեր մասին» բաժնում։",
+    logosTitle: "Լոգոներ",
   },
   auth: {
     signInTitle: "Մուտք ադմին",
