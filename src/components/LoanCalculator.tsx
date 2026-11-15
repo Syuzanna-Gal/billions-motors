@@ -38,7 +38,7 @@ export function LoanCalculator({ t, locale, initialPrice }: Props) {
             {TERMS.map((m) => (
               <button key={m} type="button" aria-pressed={term === m} onClick={() => setTerm(m)}
                 className={`min-h-11 min-w-14 rounded-full px-4 text-sm transition-colors ${
-                  term === m ? "gold-gradient font-semibold text-ink" : "border border-line text-mute hover:text-ivory"
+                  term === m ? "gold-gradient font-semibold text-on-gold" : "border border-line text-mute hover:text-ivory"
                 }`}>
                 {m}
               </button>
@@ -47,7 +47,7 @@ export function LoanCalculator({ t, locale, initialPrice }: Props) {
         </fieldset>
       </div>
 
-      <div className="flex flex-col justify-between gap-6 rounded-[24px] border border-gold/30 bg-[radial-gradient(100%_100%_at_100%_0%,#2a2620_0%,#141416_70%)] p-6 sm:p-8" aria-live="polite">
+      <div className="flex flex-col justify-between gap-6 rounded-[24px] border border-gold/30 bg-[radial-gradient(100%_100%_at_100%_0%,var(--hero-glow)_0%,var(--color-ink-2)_70%)] p-6 sm:p-8" aria-live="polite">
         <div>
           <p className="eyebrow">{t.monthly}</p>
           <p className="text-gold mt-3 font-serif text-[52px] leading-none sm:text-6xl">{amd(result.monthly)}</p>

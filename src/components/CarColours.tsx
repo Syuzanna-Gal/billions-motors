@@ -90,7 +90,7 @@ export function ColourStockBadge({
             const active = kind === "INTERIOR" && i === trimIndex;
             return (
               <span key={trim.id} className={`inline-flex items-center gap-1.5 ${active ? "text-ivory" : ""}`}>
-                <span className={`size-3 rounded-full ring-1 ${active ? "ring-gold" : "ring-white/20"}`} style={{ backgroundColor: trim.hex }} aria-hidden="true" />
+                <span className={`size-3 rounded-full ring-1 ${active ? "ring-gold" : "ring-ivory/20"}`} style={{ backgroundColor: trim.hex }} aria-hidden="true" />
                 {trim.name} {n}
               </span>
             );

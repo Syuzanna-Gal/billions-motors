@@ -225,7 +225,7 @@ function SearchPanel({
                 )
               )}
               <Link href={r.href} tabIndex={-1} onClick={onNavigate}
-                className={`flex items-center gap-4 border-l-2 px-5 py-3 transition-colors ${i === active ? "border-gold bg-white/[0.06]" : "border-transparent"}`}>
+                className={`flex items-center gap-4 border-l-2 px-5 py-3 transition-colors ${i === active ? "border-gold bg-ivory/[0.06]" : "border-transparent"}`}>
                 <span className="h-11 w-16 flex-none overflow-hidden rounded-lg bg-ink-3">
                   {r.image && (
                     // eslint-disable-next-line @next/next/no-img-element

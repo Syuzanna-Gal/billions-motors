@@ -85,7 +85,7 @@ export function LeadForm({ t, type, vehicleSlug, locale, submitLabel, extra }: P
         {state === "sending" ? t.sending : (submitLabel ?? t.send)}
       </button>
       {state === "error" && (
-        <p role="alert" className="text-sm text-[#f0a58f]">{t.error}</p>
+        <p role="alert" className="text-sm text-danger">{t.error}</p>
       )}
     </form>
   );

@@ -51,7 +51,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             href={`/${locale}/cars/${hero.slug}`}
             className="float-y sheen group relative block h-[340px] overflow-hidden rounded-[28px] border border-line sm:h-[440px]"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_70%_20%,#2a2620_0%,#141416_55%,#0e0e10_100%)]">
+            <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_70%_20%,var(--hero-glow)_0%,var(--color-ink-2)_55%,var(--color-ink)_100%)]">
               <CarPhoto image={hero.cover ?? undefined} alt={vehicleName(hero)} placeholder={t.car.photo} priority className="!bg-none" />
             </div>
             <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 bg-gradient-to-t from-ink/90 to-transparent p-7">
@@ -131,7 +131,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* CTA */}
       <section className="container-page" {...reveal()}>
-        <div className="relative overflow-hidden rounded-[32px] border border-gold/25 bg-[radial-gradient(90%_140%_at_100%_0%,#2a2620_0%,#141416_60%)] px-7 py-12 sm:px-14 sm:py-16">
+        <div className="relative overflow-hidden rounded-[32px] border border-gold/25 bg-[radial-gradient(90%_140%_at_100%_0%,var(--hero-glow)_0%,var(--color-ink-2)_60%)] px-7 py-12 sm:px-14 sm:py-16">
           <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
               <h2 className="font-serif text-4xl font-medium sm:text-5xl">{t.home.ctaTitle}</h2>

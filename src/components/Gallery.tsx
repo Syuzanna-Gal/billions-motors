@@ -180,7 +180,7 @@ function Swatches({
                 i === active ? "border-gold" : "border-line hover:border-gold/50"
               }`}
             >
-              <span className="size-8 rounded-full ring-1 ring-white/15" style={{ backgroundColor: c.hex }} />
+              <span className="size-8 rounded-full ring-1 ring-ivory/15" style={{ backgroundColor: c.hex }} />
             </span>
           </label>
         ))}

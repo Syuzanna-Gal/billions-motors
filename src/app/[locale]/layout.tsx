@@ -14,6 +14,7 @@ import { getContact } from "@/lib/settings";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
+import { THEME_SCRIPT } from "@/components/ThemeToggle";
 
 const EARLY_REVEAL = `(function(){try{
 if(!("IntersectionObserver" in window))return;
@@ -30,7 +31,12 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export const viewport: Viewport = { themeColor: "#0b0b0c" };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f1e7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0c" },
+  ],
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -59,7 +65,11 @@ export default async function LocaleLayout({
   const contact = await getContact(locale);
 
   return (
-    <html lang={locale}>
+    // data-theme is set by THEME_SCRIPT before the first paint, hence suppressHydrationWarning.
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-dvh bg-ink text-ivory">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 btn-gold">
           Skip to content

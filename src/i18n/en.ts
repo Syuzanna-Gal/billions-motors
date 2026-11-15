@@ -5,6 +5,8 @@ export const en = {
       "New cars imported directly from China — warranty, financing and full customs support in Yerevan.",
   },
   nav: {
+    themeLight: "Light mode",
+    themeDark: "Dark mode",
     cars: "Cars",
     financing: "Financing",
     importProcess: "Import process",

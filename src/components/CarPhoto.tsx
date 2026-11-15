@@ -33,7 +33,7 @@ export function CarPhoto({
     <div
       role="img"
       aria-label={alt}
-      className={`flex h-full w-full items-center justify-center bg-[linear-gradient(160deg,#1d1b18_0%,#111113_100%)] ${className}`}
+      className={`flex h-full w-full items-center justify-center bg-[linear-gradient(160deg,var(--photo-1)_0%,var(--photo-2)_100%)] ${className}`}
     >
       <svg
         viewBox="0 0 88 40"

@@ -15,7 +15,7 @@ export function StatusBadge({
   if (status === "IN_TRANSIT" && arrivalDays != null) extra = plural(arrivalDays, t.units.days, locale);
   return (
     <span
-      className={`gold-gradient inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink ${className}`}
+      className={`gold-gradient inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-on-gold ${className}`}
     >
       {t.status[status]}
       {extra && <span className="ml-1.5 normal-case tracking-normal">· {extra}</span>}

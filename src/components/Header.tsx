@@ -5,6 +5,7 @@ import { CloseMenuOnNavigate } from "./CloseMenuOnNavigate";
 import { LangSwitch } from "./LangSwitch";
 import { SearchBox } from "./SearchBox";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function navItems(locale: Locale, t: Dictionary) {
   return [
@@ -38,6 +39,7 @@ export function Header({ locale, t, contact }: { locale: Locale; t: Dictionary; 
 
         <div className="flex items-center gap-2 sm:gap-3">
           <SearchBox locale={locale} t={t.search} />
+          <ThemeToggle toLight={t.nav.themeLight} toDark={t.nav.themeDark} />
           <LangSwitch locale={locale} />
           <a href={contact.telHref} className="btn-gold hidden !min-h-11 !px-5 !text-sm sm:inline-flex">
             {t.nav.callUs}

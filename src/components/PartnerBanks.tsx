@@ -18,7 +18,7 @@ export function PartnerBanks({ banks, t }: { banks: Bank[]; t: Dictionary["banks
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={b.logoUrl} alt="" loading="lazy" className="size-[72%] object-contain" />
                 ) : (
-                  <span className="font-serif text-2xl font-semibold text-ink" aria-hidden="true">{bankInitials(b.name)}</span>
+                  <span className="font-serif text-2xl font-semibold text-on-gold" aria-hidden="true">{bankInitials(b.name)}</span>
                 )}
               </span>
               <span className="mt-2.5 block max-w-24 text-center text-xs leading-snug text-mute group-hover:text-ivory sm:max-w-28">

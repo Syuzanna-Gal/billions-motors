@@ -12,11 +12,52 @@
   --color-gold-mid: #c9a66b;
   --color-gold-deep: #a8834a;
   --color-line: rgb(230 207 158 / 0.16);
+  /* Text on gold buttons and badges, and on the white bank circles: dark in both themes. */
+  --color-on-gold: #0b0b0c;
+  --color-danger: #f0a58f;
 
   --font-serif: "Cormorant Garamond", "Noto Serif Armenian Variable", Georgia, serif;
   --font-sans: "Inter Variable", "Noto Sans Armenian Variable", system-ui, sans-serif;
 
   --radius-card: 22px;
+}
+
+/* "light:" styles apply when the visitor chose the light theme (html[data-theme="light"]). */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/* Colours that aren't Tailwind tokens, per theme. Dark ("Noir Champagne") is the default. */
+:root {
+  color-scheme: dark;
+  --grad-text: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
+  --gold-border: rgb(230 207 158 / 0.45);
+  --field-border: rgb(230 207 158 / 0.2);
+  --gold-wash: rgb(230 207 158 / 0.06);
+  --hero-glow: #2a2620;
+  --photo-1: #1d1b18;
+  --photo-2: #111113;
+}
+
+/* Light theme ("Ivory Champagne"): warm ivory ground, dark text, deeper gold so text stays readable. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-ink: #f6f1e7;
+  --color-ink-2: #fffdf8;
+  --color-ink-3: #efe7d7;
+  --color-ivory: #1a1712;
+  --color-mute: #554d42;
+  --color-mute-2: #6b6357;
+  --color-gold: #9c7633;
+  --color-gold-mid: #85621f;
+  --color-gold-deep: #6e4f1c;
+  --color-line: rgb(120 90 40 / 0.2);
+  --color-danger: #a63c22;
+  --grad-text: linear-gradient(110deg, #6e4f1c 0%, #9c7633 45%, #7d5c25 70%, #6e4f1c 100%);
+  --gold-border: rgb(133 98 31 / 0.5);
+  --field-border: rgb(133 98 31 / 0.28);
+  --gold-wash: rgb(133 98 31 / 0.07);
+  --hero-glow: #efe2c8;
+  --photo-1: #efe8dc;
+  --photo-2: #e4dacb;
 }
 
 @layer base {
@@ -132,7 +173,7 @@
 }
 
 @utility text-gold {
-  background-image: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
+  background-image: var(--grad-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -168,7 +209,7 @@
     border-radius: 999px;
     font-weight: 600;
     font-size: 15px;
-    color: var(--color-ink);
+    color: var(--color-on-gold);
     background-image: linear-gradient(110deg, #a8834a 0%, #e6cf9e 45%, #c9a66b 70%, #a8834a 100%);
     background-size: 160% 100%;
     background-position: 0% 0;
@@ -188,12 +229,12 @@
     font-weight: 500;
     font-size: 15px;
     color: var(--color-ivory);
-    border: 1px solid rgb(230 207 158 / 0.45);
+    border: 1px solid var(--gold-border);
     transition: border-color 0.2s, background-color 0.2s;
   }
   .btn-outline:hover {
     border-color: var(--color-gold);
-    background-color: rgb(230 207 158 / 0.06);
+    background-color: var(--gold-wash);
   }
   .eyebrow {
     font-size: 12px;
@@ -207,7 +248,7 @@
     padding: 0 1rem;
     border-radius: 14px;
     background: var(--color-ink);
-    border: 1px solid rgb(230 207 158 / 0.2);
+    border: 1px solid var(--field-border);
     color: var(--color-ivory);
     font-size: 15px;
   }
