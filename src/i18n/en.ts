@@ -170,6 +170,10 @@ export const en = {
     map: "Showroom on the map",
     openMap: "Open in Google Maps",
   },
+  banks: {
+    title: "Partner banks",
+    lead: "We work with these banks and help you apply to the one that suits you best.",
+  },
   pages: {
     financing: {
       title: "Financing",

@@ -172,6 +172,10 @@ export const ru: Dictionary = {
     map: "Салон на карте",
     openMap: "Открыть в Google Maps",
   },
+  banks: {
+    title: "Банки-партнёры",
+    lead: "Мы работаем с этими банками и поможем подать заявку в тот, что подходит именно вам.",
+  },
   pages: {
     financing: {
       title: "Финансирование",

@@ -23,6 +23,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           { href: "/admin/leads", label: newLeads ? interpolate(t.nav.requestsNew, { count: newLeads }) : t.nav.requests },
           { href: "/admin/contact", label: t.nav.contact },
           { href: "/admin/texts", label: t.nav.texts },
+          { href: "/admin/banks", label: t.nav.banks },
           { href: "/admin/users", label: t.nav.users },
         ]
       : []),

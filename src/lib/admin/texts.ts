@@ -20,7 +20,7 @@ export const TEXT_SECTIONS: TextSection[] = [
   { slug: "header-footer", preview: "", prefixes: ["nav", "footer", "meta"] },
   { slug: "cars", preview: "/cars", prefixes: ["catalog", "search"] },
   { slug: "car-page", preview: "/cars", prefixes: ["car"] },
-  { slug: "info-pages", preview: "/about", prefixes: ["pages"] },
+  { slug: "info-pages", preview: "/about", prefixes: ["pages", "banks"] },
   { slug: "loan", preview: "/loan-calculator", prefixes: ["loan"] },
   { slug: "contact", preview: "/contact", prefixes: ["contact", "form"] },
   { slug: "labels", preview: "/cars", prefixes: ["status", "fuel", "body", "drive", "units"] },

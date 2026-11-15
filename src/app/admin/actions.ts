@@ -17,9 +17,10 @@ import { createUser, deleteUser, PASSWORD_MIN, setPassword, updateUser, validEma
 import { LEAD_STATUSES, setLeadStatus, type LeadStatus } from "@/lib/admin/leads";
 import { saveSectionTexts, sectionBySlug } from "@/lib/admin/texts";
 import { saveSettings, SETTING_KEYS, type Settings, parseMapLocation } from "@/lib/settings";
-import { saveImage, UploadError } from "@/lib/media";
+import { deleteImageFile, saveImage, UploadError } from "@/lib/media";
 import { interpolate } from "@/lib/format";
 import { parseStockGrid } from "@/lib/colour-stock";
+import { BANK_SLOTS, saveBankSlot } from "@/lib/banks";
 import type { SaveResult } from "./_components/KeepValuesForm";
 import { cookies } from "next/headers";
 import { ADMIN_LANG_COOKIE, adminT } from "@/lib/admin/lang";
@@ -402,4 +403,41 @@ export async function setAdminLangAction(form: FormData) {
     await db.query("UPDATE admin_users SET lang = $1 WHERE id = $2", [lang, user.id]);
   }
   revalidatePath("/admin", "layout");
+}
+
+/* ---------- Partner banks (Financing page) ---------- */
+
+export async function saveBankAction(form: FormData) {
+  await requireUser("FULL");
+  const all = await adminT();
+  const t = all.banks;
+  const slot = int(form, "slot");
+  if (!(slot >= 1 && slot <= BANK_SLOTS)) back("/admin/banks", t.badPlace, "err");
+  const at = `/admin/banks#bank-${slot}`;
+  const url = str(form, "url", 300) || null;
+  if (url && !/^https:\/\/[^\s]+$/.test(url)) back(at, t.badUrl, "err");
+
+  // A new file replaces the logo; "remove" clears it; otherwise the logo stays as it is.
+  let logoUrl: string | null | undefined;
+  const file = form.get("logo");
+  if (file instanceof File && file.size > 0) {
+    try {
+      logoUrl = await saveImage(file, "banks", { type: all.carEdit.uploadType, size: all.carEdit.uploadSize });
+    } catch (err) {
+      if (err instanceof UploadError) back(at, err.message, "err");
+      throw err;
+    }
+  } else if (form.get("remove_logo") === "on") {
+    logoUrl = null;
+  }
+
+  const replaced = await saveBankSlot(slot, {
+    name: str(form, "name", 60),
+    url,
+    visible: form.get("visible") === "on",
+    logoUrl,
+  });
+  if (replaced) await deleteImageFile(replaced);
+  refreshSite();
+  back(at, interpolate(t.saved, { n: slot }));
 }

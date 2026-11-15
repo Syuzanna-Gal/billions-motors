@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { isLocale, locales, type Dictionary } from "@/i18n";
 import { PageHeader } from "@/components/PageHeader";
 import { reveal } from "@/lib/reveal";
+import { PartnerBanks } from "@/components/PartnerBanks";
+import { getShownBanks } from "@/lib/banks";
 
 // Simple content pages: /financing, /import-process, /warranty, /about
 type PageKey = keyof Dictionary["pages"];
@@ -32,6 +34,7 @@ export default async function ContentPage({ params }: Props) {
   const t = await getDictionary(locale);
   const content = t.pages[page];
   const numbered = page === "import-process";
+  const banks = page === "financing" ? await getShownBanks() : [];
 
   return (
     <>
@@ -52,6 +55,8 @@ export default async function ContentPage({ params }: Props) {
           <Link href={`/${locale}/cars`} className="btn-gold">{t.home.viewAll}</Link>
           <Link href={`/${locale}/contact`} className="btn-outline">{t.nav.contact}</Link>
         </div>
+        {/* Partner banks (Admin → Banks), under the buttons. */}
+        <PartnerBanks banks={banks} t={t.banks} />
       </section>
     </>
   );

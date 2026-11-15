@@ -172,6 +172,10 @@ export const hy: Dictionary = {
     map: "Սրահը քարտեզի վրա",
     openMap: "Բացել Google Maps-ում",
   },
+  banks: {
+    title: "Գործընկեր բանկեր",
+    lead: "Աշխատում ենք այս բանկերի հետ և կօգնենք դիմել Ձեզ համար ամենահարմարին։",
+  },
   pages: {
     financing: {
       title: "Ֆինանսավորում",

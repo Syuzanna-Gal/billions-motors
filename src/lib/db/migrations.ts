@@ -264,4 +264,19 @@ export const migrations: { id: string; sql: string }[] = [
       WHERE i.color_id = c.id AND i.kind <> c.kind;
     `,
   },
+  {
+    id: "010_partner_banks",
+    sql: /* sql */ `
+      -- Partner banks on the Financing page: 10 fixed places, edited in Admin → Banks.
+      CREATE TABLE partner_banks (
+        slot        smallint PRIMARY KEY CHECK (slot BETWEEN 1 AND 10),
+        name        text NOT NULL DEFAULT '',
+        logo_url    text,
+        url         text CHECK (url IS NULL OR url LIKE 'https://%'),
+        visible     boolean NOT NULL DEFAULT true,
+        updated_at  timestamptz NOT NULL DEFAULT now()
+      );
+      INSERT INTO partner_banks (slot) SELECT generate_series(1, 10);
+    `,
+  },
 ];
