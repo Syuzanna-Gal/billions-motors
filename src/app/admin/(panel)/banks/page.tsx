@@ -30,7 +30,7 @@ export default async function BanksPage() {
           return (
             <li key={b.slot} id={`bank-${b.slot}`} className="scroll-mt-6">
               {/* Keyed by its saved values so the fields show what was saved after each save. */}
-              <form key={`${b.logoUrl}|${b.name}|${b.url}|${b.visible}`} action={saveBankAction} encType="multipart/form-data"
+              <form key={`${b.logoUrl}|${b.name}|${b.url}|${b.visible}`} action={saveBankAction}
                 className={`flex h-full flex-col gap-4 rounded-[20px] border bg-ink-2 p-5 ${filled && b.visible ? "border-gold/40" : "border-line"}`}>
                 <input type="hidden" name="slot" value={b.slot} />
                 <div className="flex items-center gap-4">
