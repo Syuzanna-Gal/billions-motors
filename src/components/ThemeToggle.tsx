@@ -1,5 +1,8 @@
 "use client";
 
+import { useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
+
 /*
  * Light / dark switch. The theme lives on <html data-theme>: set before the first paint by
  * THEME_SCRIPT (the visitor's saved choice, else their device setting), changed here and saved.
@@ -14,11 +17,41 @@ export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME
 if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
 document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
+/** This visit's choice, for when the browser won't let us save it (private mode). */
+let chosen: "light" | "dark" | null = null;
+
+/** The visitor's choice, else the device setting. */
+function preferred(): "light" | "dark" {
+  if (chosen) return chosen;
+  try {
+    const t = localStorage.getItem(THEME_KEY);
+    if (t === "light" || t === "dark") return t;
+  } catch {
+    /* storage blocked */
+  }
+  return matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+/**
+ * Switching language swaps the whole <html> (a new root layout) without a page load, so the
+ * head script doesn't run again. This puts the theme back before the new page is painted.
+ */
+export function ThemeSync() {
+  const pathname = usePathname();
+  useLayoutEffect(() => {
+    const t = preferred();
+    if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", BG[t]);
+  }, [pathname]);
+  return null;
+}
+
 export function ThemeToggle({ toLight, toDark }: { toLight: string; toDark: string }) {
   const toggle = () => {
     const root = document.documentElement;
     const next = root.dataset.theme === "light" ? "dark" : "light";
     root.dataset.theme = next;
+    chosen = next;
     try {
       localStorage.setItem(THEME_KEY, next);
     } catch {

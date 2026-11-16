@@ -14,7 +14,7 @@ import { getContact } from "@/lib/settings";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
-import { THEME_SCRIPT } from "@/components/ThemeToggle";
+import { THEME_SCRIPT, ThemeSync } from "@/components/ThemeToggle";
 
 const EARLY_REVEAL = `(function(){try{
 if(!("IntersectionObserver" in window))return;
@@ -81,6 +81,7 @@ export default async function LocaleLayout({
             stay empty while the JavaScript bundle loads on a slow phone. RevealObserver takes over after. */}
         <script dangerouslySetInnerHTML={{ __html: EARLY_REVEAL }} />
         <RevealObserver />
+        <ThemeSync />
         {/* Without JavaScript, show everything instead of waiting for the scroll reveal. */}
         <noscript>
           <style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style>
