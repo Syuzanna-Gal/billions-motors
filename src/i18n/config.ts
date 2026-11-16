@@ -21,3 +21,6 @@ export const amdSuffix: Record<Locale, string> = { hy: "դր.", en: "AMD", ru: "
 export function languageAlternates(path: string): Record<string, string> {
   return Object.fromEntries(locales.map((l) => [l, `/${l}${path}`]));
 }
+
+/** The language a visitor picked in the switcher; used when they open the bare address again. */
+export const LOCALE_COOKIE = "bm-locale";

@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { localeLabels, locales, type Locale } from "@/i18n/config";
+import { LOCALE_COOKIE, localeLabels, locales, type Locale } from "@/i18n/config";
+
+/** Remembers the visitor's pick for a year, so billions.am opens in it next time. */
+const remember = (l: Locale) => {
+  document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
+};
 
 function Switch({ locale }: { locale: Locale }) {
   const pathname = usePathname() ?? `/${locale}`;
@@ -20,6 +25,7 @@ function Switch({ locale }: { locale: Locale }) {
             key={l}
             href={href}
             hrefLang={l}
+            onClick={() => remember(l)}
             aria-current={active ? "true" : undefined}
             className={`flex min-h-9 min-w-11 items-center justify-center rounded-full px-3 transition-colors ${
               active ? "bg-ivory font-semibold text-ink" : "text-mute hover:text-ivory"
