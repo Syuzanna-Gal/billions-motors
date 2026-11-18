@@ -25,12 +25,12 @@ export function BankTicker({ banks, t }: { banks: Bank[]; t: Dictionary["banks"]
         <>
           <span className="size-2 rotate-45 bg-gold-mid" aria-hidden="true" />
           <span className="whitespace-nowrap text-ivory group-hover:text-gold">{b.name}</span>
-          <span className="flex size-16 flex-none sm:size-[72px] items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold/30">
+          <span className="flex size-16 flex-none sm:size-[72px] items-center justify-center overflow-hidden rounded-full ring-1 ring-gold/30">
             {b.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={b.logoUrl} alt="" loading="lazy" className="size-[72%] object-contain" />
             ) : (
-              <span className="font-serif text-lg font-semibold text-on-gold" aria-hidden="true">{bankInitials(b.name)}</span>
+              <span className="font-serif text-lg font-semibold text-gold" aria-hidden="true">{bankInitials(b.name)}</span>
             )}
           </span>
         </>
