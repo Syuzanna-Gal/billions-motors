@@ -8,6 +8,8 @@ import { getContact } from "@/lib/settings";
 import { CarCard } from "@/components/CarCard";
 import { CarPhoto } from "@/components/CarPhoto";
 import { Ticker } from "@/components/Ticker";
+import { BankTicker } from "@/components/BankTicker";
+import { getShownBanks } from "@/lib/banks";
 import { reveal, stagger } from "@/lib/reveal";
 
 // Car data comes from the database, so render on each request.
@@ -18,7 +20,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) notFound();
   const t = await getDictionary(locale);
 
-  const [[hero], collection, contact] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, { limit: 8, offset: 0 }).then((r) => r.cars), getContact(locale)]);
+  const [[hero], collection, contact, banks] = await Promise.all([getFeatured(locale, 1), listVehicles(locale, { sort: "newest" }, { limit: 8, offset: 0 }).then((r) => r.cars), getContact(locale), getShownBanks()]);
 
   return (
     <>
@@ -128,6 +130,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           ))}
         </div>
       </section>
+
+      {/* Partner banks (same list as the Financing page) */}
+      <BankTicker banks={banks} t={t.banks} />
 
       {/* CTA */}
       <section className="container-page" {...reveal()}>
