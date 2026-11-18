@@ -9,19 +9,19 @@ export function PartnerBanks({ banks, t }: { banks: Bank[]; t: Dictionary["banks
     <section aria-labelledby="partner-banks" className="mt-14" {...reveal(120)}>
       <h2 id="partner-banks" className="font-serif text-3xl font-medium">{t.title}</h2>
       <p className="mt-2 max-w-2xl text-mute">{t.lead}</p>
-      <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-7">
+      <ul className="mt-7 flex flex-wrap gap-x-7 gap-y-8">
         {banks.map((b) => {
           const circle = (
             <>
-              <span className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold/30 transition-shadow group-hover:ring-2 group-hover:ring-gold sm:size-24">
+              <span className="flex size-24 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold/30 transition-shadow group-hover:ring-2 group-hover:ring-gold sm:size-28">
                 {b.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={b.logoUrl} alt="" loading="lazy" className="size-[72%] object-contain" />
                 ) : (
-                  <span className="font-serif text-2xl font-semibold text-on-gold" aria-hidden="true">{bankInitials(b.name)}</span>
+                  <span className="font-serif text-3xl font-semibold text-on-gold" aria-hidden="true">{bankInitials(b.name)}</span>
                 )}
               </span>
-              <span className="mt-2.5 block max-w-24 text-center text-xs leading-snug text-mute group-hover:text-ivory sm:max-w-28">
+              <span className="mt-3 block max-w-28 text-center text-sm leading-snug text-mute group-hover:text-ivory sm:max-w-32">
                 {b.name}
               </span>
             </>
