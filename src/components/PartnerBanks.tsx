@@ -13,10 +13,10 @@ export function PartnerBanks({ banks, t }: { banks: Bank[]; t: Dictionary["banks
         {banks.map((b) => {
           const circle = (
             <>
-              <span className="flex size-24 items-center justify-center overflow-hidden rounded-full ring-1 ring-gold/30 transition-shadow group-hover:ring-2 group-hover:ring-gold sm:size-28">
+              <span className="flex size-24 items-center justify-center transition-opacity group-hover:opacity-80 sm:size-28">
                 {b.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={b.logoUrl} alt="" loading="lazy" className="size-[72%] object-contain" />
+                  <img src={b.logoUrl} alt="" loading="lazy" className="size-full object-contain" />
                 ) : (
                   <span className="font-serif text-3xl font-semibold text-gold" aria-hidden="true">{bankInitials(b.name)}</span>
                 )}
